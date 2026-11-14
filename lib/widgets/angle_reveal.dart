@@ -161,7 +161,9 @@ class const AngleZoom({
         builder: (context, c) {
           final heading = Text(
             '拡大',
-            style: TextStyle(fontSize: 14, color: scheme.outline),
+            // 枠線の色（outline）では背景とのコントラストが 2.36:1 と低いので、
+            // 補足文字の色（dim、5.64:1）にする。
+            style: TextStyle(fontSize: 14, color: context.retroColors.dim),
           );
           final value = Text(
             signedLabel(target, actual),

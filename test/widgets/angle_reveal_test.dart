@@ -1,4 +1,7 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hinge_angle_game/ui/retro_theme.dart';
 import 'package:hinge_angle_game/widgets/angle_reveal.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -221,5 +224,27 @@ void main() {
       tester.getSize(find.byType(AngleZoom)).height,
       lessThanOrEqualTo(30),
     );
+  });
+
+  testWidgets('拡大図の見出しは背景とのコントラストが 4.5:1 以上の色で描く', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: Retro.theme(),
+        home: const Scaffold(
+          body: SizedBox(
+            width: 300,
+            height: 200,
+            child: AngleZoom(target: 30, actual: 34),
+          ),
+        ),
+      ),
+    );
+    final heading = tester.widget<Text>(find.text('拡大'));
+    final color = heading.style!.color!;
+    final bg = Retro.theme().colorScheme.surface;
+    double lum(Color c) => c.computeLuminance();
+    final hi = math.max(lum(color), lum(bg));
+    final lo = math.min(lum(color), lum(bg));
+    expect((hi + 0.05) / (lo + 0.05), greaterThanOrEqualTo(4.5));
   });
 }
