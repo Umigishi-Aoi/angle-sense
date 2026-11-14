@@ -1,0 +1,69 @@
+import 'package:flutter/material.dart';
+
+import '../services/angle_provider.dart';
+import '../ui/retro_theme.dart';
+
+/// iPhone Duo で外側の画面に移ったときに「開いて内側を見てね」と出す。
+///
+/// 画面の切り替えは iOS が開き具合で決め、アプリからは止められない（iOS 27.2 SDK 調査 2026-11-06）。
+/// ゲームは内側の画面だけで遊ぶ設計なので、外側に来たら中身の代わりに案内を出す。
+class InnerDisplayGuard extends StatelessWidget {
+  const InnerDisplayGuard({
+    super.key,
+    required this.angleProvider,
+    required this.child,
+  });
+
+  final AngleProvider angleProvider;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: angleProvider.onOuterDisplay,
+      child: child,
+      builder: (context, outer, child) => Stack(
+        children: [
+          child!,
+          if (outer) const Positioned.fill(child: _OuterNotice()),
+        ],
+      ),
+    );
+  }
+}
+
+class _OuterNotice extends StatelessWidget {
+  const _OuterNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return ColoredBox(
+      color: Retro.bg,
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'ひらいてね',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    color: Retro.yellow,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'このゲームは内側の画面で遊びます。\n直角より大きく開くと内側の画面に戻ります。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

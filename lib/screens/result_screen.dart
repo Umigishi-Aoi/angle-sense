@@ -1,0 +1,185 @@
+import 'dart:async';
+
+import 'package:flutter/material.dart';
+
+import '../game/scoring.dart';
+import '../services/angle_provider.dart';
+import '../services/best_score_store.dart';
+import '../services/feedback.dart';
+import '../ui/retro_theme.dart';
+import '../widgets/angle_reveal.dart';
+import '../widgets/deviation_chart.dart';
+import 'game_screen.dart';
+
+class ResultScreen extends StatefulWidget {
+  const ResultScreen({
+    super.key,
+    required this.results,
+    required this.totalScore,
+    required this.rank,
+    required this.angleProvider,
+    this.bestScoreStore,
+    this.bestScore,
+    this.isNewBest = false,
+  });
+
+  final List<RoundResult> results;
+  final int totalScore;
+  final Rank rank;
+  final AngleProvider angleProvider;
+
+  final BestScoreStore? bestScoreStore;
+
+  /// 保存済みの最高点（今回分を反映後）。保存に失敗したときは null。
+  final int? bestScore;
+  final bool isNewBest;
+
+  @override
+  State<ResultScreen> createState() => _ResultScreenState();
+}
+
+class _ResultScreenState extends State<ResultScreen> {
+  Timer? _bestTimer;
+
+  @override
+  void dispose() {
+    _bestTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    final fb = context.feedback;
+    fb.play(Sfx.rank);
+    if (widget.isNewBest) {
+      _bestTimer = Timer(
+        const Duration(milliseconds: 700),
+        () => fb.play(Sfx.best),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final results = widget.results;
+    final totalScore = widget.totalScore;
+    final rank = widget.rank;
+    final angleProvider = widget.angleProvider;
+    final bestScoreStore = widget.bestScoreStore;
+    final bestScore = widget.bestScore;
+    final isNewBest = widget.isNewBest;
+    final theme = Theme.of(context);
+    final summary = <Widget>[
+      Text('ランク', style: theme.textTheme.titleMedium),
+      Text(
+        rank.label,
+        style: theme.textTheme.displayLarge?.copyWith(
+          fontSize: 96,
+          height: 1.1,
+          color: Retro.yellow,
+        ),
+      ),
+      Text(
+        '$totalScore / ${results.length * Judgement.perfect.points} 点',
+        style: theme.textTheme.headlineSmall,
+      ),
+      if (isNewBest)
+        Text(
+          '自己ベスト更新！',
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: theme.colorScheme.primary,
+          ),
+        )
+      else if (bestScore != null)
+        Text('自己ベスト $bestScore 点', style: theme.textTheme.bodyMedium),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          OutlinedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ホーム'),
+          ),
+          const SizedBox(width: 16),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pushReplacement(
+              MaterialPageRoute<void>(
+                builder: (_) => GameScreen(
+                  angleProvider: angleProvider,
+                  bestScoreStore: bestScoreStore,
+                ),
+              ),
+            ),
+            child: const Text('もう一度'),
+          ),
+        ],
+      ),
+    ];
+    // 5 問のズレを 1 本の物差しに並べ、自分の癖（いつも足りない・折りすぎ）を見せる。
+    final details = ListView(
+      padding: const EdgeInsets.fromLTRB(8, 8, 24, 16),
+      children: [
+        const Text(
+          'あなたの感覚のズレ',
+          style: TextStyle(fontSize: 18, color: Retro.cyan),
+        ),
+        const SizedBox(height: 4),
+        DeviationChart(
+          key: const ValueKey('result_chart'),
+          rows: [
+            for (var i = 0; i < results.length; i++) ('${i + 1}問', results[i]),
+          ],
+        ),
+        const SizedBox(height: 12),
+        for (var i = 0; i < results.length; i++)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: Row(
+              children: [
+                SizedBox(width: 56, child: Text('${i + 1}問')),
+                Expanded(
+                  child: Text(
+                    results[i].measured
+                        ? '${results[i].target.round()}°→${results[i].actual!.round()}°'
+                              '  ${AngleZoom.signedLabel(results[i].target, results[i].actual!)}'
+                        : '${results[i].target.round()}°→計測なし',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Text(
+                  '${results[i].judgement.label}  ${results[i].points}',
+                  style: TextStyle(
+                    color: Retro.judgement(results[i].judgement),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+    return Scaffold(
+      appBar: AppBar(title: const Text('結果'), automaticallyImplyLeading: false),
+      body: SafeArea(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              flex: 4,
+              child: Center(
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: summary,
+                  ),
+                ),
+              ),
+            ),
+            Expanded(flex: 5, child: details),
+          ],
+        ),
+      ),
+    );
+  }
+}
