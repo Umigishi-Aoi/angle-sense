@@ -1,12 +1,12 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:material_ui/material_ui.dart';
 
+import '../app/route_observer.dart';
 import '../game/game_session.dart';
-import '../main.dart' show routeObserver;
 import '../services/angle_provider.dart';
-import '../services/best_score_store.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
+import '../utils/result.dart';
 import '../widgets/angle_reveal.dart';
 import '../widgets/angle_text.dart';
 import '../widgets/inner_display_guard.dart';
@@ -17,14 +17,12 @@ import 'game_screen.dart';
 class const HomeScreen({
   super.key,
   required final AngleProvider angleProvider,
-  final BestScoreStore? bestScoreStore,
 }) extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState() extends State<HomeScreen> with RouteAware {
-  late final BestScoreStore _store = widget.bestScoreStore ?? BestScoreStore();
   late Future<int?> _best = _loadBest();
   bool _starting = false;
 
@@ -52,16 +50,16 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
     });
   }
 
+  /// 読めなかったときは記録なしと同じ表示にする。
   Future<int?> _loadBest() async {
-    try {
-      return await _store.load(
-        providerId: widget.angleProvider.id,
-        rounds: GameSession.defaultRounds,
-      );
-    } on Exception catch (e) {
-      debugPrint('best score load failed: $e');
-      return null;
-    }
+    final best = await context.bestScores.load(
+      providerId: widget.angleProvider.id,
+      rounds: GameSession.defaultRounds,
+    );
+    return switch (best) {
+      Ok(:final value) => value,
+      Error() => null,
+    };
   }
 
   Future<void> _start() async {
@@ -70,10 +68,7 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
     try {
       await Navigator.of(context).push(
         MaterialPageRoute<void>(
-          builder: (_) => GameScreen(
-            angleProvider: widget.angleProvider,
-            bestScoreStore: widget.bestScoreStore,
-          ),
+          builder: (_) => GameScreen(angleProvider: widget.angleProvider),
         ),
       );
     } finally {

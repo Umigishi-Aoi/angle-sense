@@ -28,8 +28,9 @@ extension RankLabel on Rank {
   String get label => name.toUpperCase();
 }
 
-/// 10問×最大100点=1000点満点。S≥850 / A≥650 / B≥400 / C。
-Rank rankFor(int totalScore, {int rounds = 10}) {
+/// 満点（問題数×100点）に対する割合で決める。S≥85% / A≥65% / B≥40% / C。
+/// 例: 5問=500点満点なら S≥425 / A≥325 / B≥200。
+Rank rankFor(int totalScore, {required int rounds}) {
   final ratio = totalScore / (rounds * Judgement.perfect.points);
   if (ratio >= 0.85) return Rank.s;
   if (ratio >= 0.65) return Rank.a;
@@ -60,7 +61,7 @@ const minTarget = 10;
 const maxTarget = 80;
 
 /// お題の角度を作る。ヒンジの実効精度（約5°）に合わせて5°刻み。
-List<int> generateTargets({int count = 10, math.Random? random}) {
+List<int> generateTargets({required int count, math.Random? random}) {
   final r = random ?? math.Random();
   final candidates = [for (var d = minTarget; d <= maxTarget; d += 5) d];
   return List.generate(count, (_) => candidates[r.nextInt(candidates.length)]);

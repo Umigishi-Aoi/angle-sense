@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 
 import '../game/scoring.dart';
 import '../services/angle_provider.dart';
-import '../services/best_score_store.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
 import '../widgets/angle_reveal.dart';
@@ -17,7 +16,6 @@ class const ResultScreen({
   required final int totalScore,
   required final Rank rank,
   required final AngleProvider angleProvider,
-  final BestScoreStore? bestScoreStore,
 
   /// 保存済みの最高点（今回分を反映後）。保存に失敗したときは null。
   final int? bestScore,
@@ -54,7 +52,6 @@ class _ResultScreenState() extends State<ResultScreen> {
     final totalScore = widget.totalScore;
     final rank = widget.rank;
     final angleProvider = widget.angleProvider;
-    final bestScoreStore = widget.bestScoreStore;
     final bestScore = widget.bestScore;
     final isNewBest = widget.isNewBest;
     final theme = Theme.of(context);
@@ -93,10 +90,7 @@ class _ResultScreenState() extends State<ResultScreen> {
           FilledButton(
             onPressed: () => Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
-                builder: (_) => GameScreen(
-                  angleProvider: angleProvider,
-                  bestScoreStore: bestScoreStore,
-                ),
+                builder: (_) => GameScreen(angleProvider: angleProvider),
               ),
             ),
             child: const Text('もう一度'),

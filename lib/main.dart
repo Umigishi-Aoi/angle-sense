@@ -6,16 +6,17 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:store_review/store_review.dart';
 
+import 'app/route_observer.dart';
+import 'repositories/best_score_repository.dart';
 import 'screens/home_screen.dart';
 import 'services/angle_provider.dart';
 import 'services/angle_provider_resolver.dart';
 import 'services/app_settings.dart';
+import 'services/best_score_store.dart';
 import 'services/diagnostics_log.dart';
 import 'services/feedback.dart';
+import 'services/tilt_angle_provider.dart';
 import 'ui/retro_theme.dart';
-
-/// ホームに戻ったこと（上の画面が閉じたこと）を知るため。
-final routeObserver = RouteObserver<ModalRoute<void>>();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -31,7 +32,14 @@ Future<void> main() async {
   final feedback = GameFeedback(settings: settings);
   // 効果音の読み込みは待たない（終わる前に鳴らそうとした音は鳴らないだけ）。
   unawaited(feedback.init());
-  runApp(PitattoAngleApp(settings: settings, feedback: feedback));
+  final bestScores = BestScoreRepository(BestScoreStore());
+  runApp(
+    PitattoAngleApp(
+      settings: settings,
+      feedback: feedback,
+      bestScores: bestScores,
+    ),
+  );
 }
 
 final _storeReview = StoreReview();
@@ -40,12 +48,14 @@ class const PitattoAngleApp({
   super.key,
   required final AppSettings settings,
   required final GameFeedback feedback,
+  required final BestScoreRepository bestScores,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppServices(
       settings: settings,
       feedback: feedback,
+      bestScores: bestScores,
       requestReview: _storeReview.request,
       child: _app(),
     );
@@ -70,7 +80,7 @@ class const _Bootstrap() extends StatefulWidget {
 }
 
 class _BootstrapState() extends State<_Bootstrap> with WidgetsBindingObserver {
-  late final Future<AngleProvider> _provider = resolveAngleProvider();
+  late final Future<AngleProvider> _provider = _resolveProvider();
   late final AppLifecycleListener _lifecycle;
   bool _stoppedInBackground = false;
 
@@ -99,14 +109,36 @@ class _BootstrapState() extends State<_Bootstrap> with WidgetsBindingObserver {
       onStateChange: (s) => DiagnosticsLog.instance.add('life', s.name),
       onPause: () async {
         _stoppedInBackground = true;
-        await (await _provider).stop();
+        await _guard('stop', () async => await (await _provider).stop());
       },
       onResume: () async {
         if (!_stoppedInBackground) return;
         _stoppedInBackground = false;
-        await (await _provider).start();
+        await _guard('start', () async => await (await _provider).start());
       },
     );
+  }
+
+  /// 入力源を決める。失敗しても読み込み画面のまま止まらないよう、傾きに切り替えてホームを出す
+  /// （傾きも始められなければ角度が来ないだけで、ホームに「取得しています…」と出る）。
+  static Future<AngleProvider> _resolveProvider() async {
+    try {
+      return await resolveAngleProvider();
+    } on Object catch (e) {
+      debugPrint('angle provider resolve failed: $e');
+    }
+    final tilt = TiltAngleProvider();
+    await _guard('tilt start', tilt.start);
+    return tilt;
+  }
+
+  /// センサーの開始・停止の失敗でアプリを落とさない（記録だけする）。
+  static Future<void> _guard(String label, Future<void> Function() f) async {
+    try {
+      await f();
+    } on Object catch (e) {
+      debugPrint('angle provider $label failed: $e');
+    }
   }
 
   /// 外側⇔内側の画面切り替えはサイズの変化として現れるので記録する。

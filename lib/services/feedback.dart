@@ -5,7 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../game/scoring.dart';
+import '../repositories/best_score_repository.dart';
 import 'app_settings.dart';
+import 'best_score_store.dart';
 
 /// 効果音の種類。ファイルは `assets/sfx/<fileName>.wav`（tool/gen_sfx.py で生成）。
 enum Sfx(final String fileName) {
@@ -115,11 +117,12 @@ class GameFeedback {
   }
 }
 
-/// 画面ツリー全体に設定と効果音を配る。
+/// 画面ツリー全体に設定・効果音・自己ベストの保存先を配る（どれも起動時に 1 つだけ作る）。
 class const AppServices({
   super.key,
   required final AppSettings settings,
   required final GameFeedback feedback,
+  required final BestScoreRepository bestScores,
 
   /// App Store のレビュー依頼（自己ベストを更新したときに呼ぶ）。
   final Future<void> Function()? requestReview,
@@ -134,6 +137,7 @@ class const AppServices({
   bool updateShouldNotify(AppServices old) =>
       settings != old.settings ||
       feedback != old.feedback ||
+      bestScores != old.bestScores ||
       requestReview != old.requestReview;
 }
 
@@ -142,12 +146,15 @@ final _fallbackSettings = AppSettings()
   ..sound = false
   ..haptics = false;
 final _fallbackFeedback = GameFeedback.silent(_fallbackSettings);
+final _fallbackBestScores = BestScoreRepository(BestScoreStore());
 
 extension AppServicesContext on BuildContext {
   GameFeedback get feedback =>
       AppServices.maybeOf(this)?.feedback ?? _fallbackFeedback;
   AppSettings get settings =>
       AppServices.maybeOf(this)?.settings ?? _fallbackSettings;
+  BestScoreRepository get bestScores =>
+      AppServices.maybeOf(this)?.bestScores ?? _fallbackBestScores;
 
   /// AppServices が無い・未設定なら何もしない。
   Future<void> Function() get requestReview =>

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/foundation.dart';
 
@@ -19,7 +20,7 @@ enum GamePhase() {
   finished,
 }
 
-/// 1セット（10問）の進行。角度は [AngleProvider] から読むだけで、入力源を問わない。
+/// 1セット（既定 [defaultRounds] 問）の進行。角度は [AngleProvider] から読むだけで、入力源を問わない。
 class GameSession({
   required final AngleProvider angleProvider,
   final int rounds = defaultRounds,
@@ -30,11 +31,21 @@ class GameSession({
   /// ロックした瞬間に呼ぶ（ハプティクス用）。
   final VoidCallback? onLock,
 }) extends ChangeNotifier {
+  this
+    : assert(
+        targets == null || targets.length >= rounds,
+        'targets は rounds 個以上必要',
+      );
+
   static const defaultRounds = 5;
 
   final List<int> targets = targets ?? generateTargets(count: rounds);
 
-  final List<RoundResult> results = [];
+  final List<RoundResult> _results = [];
+
+  /// これまでの結果（読み取り専用）。
+  late final List<RoundResult> results = UnmodifiableListView(_results);
+
   GamePhase _phase = GamePhase.showTarget;
   int _roundIndex = 0;
   int _countdown = 0;
@@ -68,7 +79,7 @@ class GameSession({
   void _lock() {
     // 値が無い（未着・ヒンジが取れなくなった）場合は「計測なし」= MISS。
     final actual = angleProvider.latestAngle;
-    results.add(RoundResult(target: currentTarget.toDouble(), actual: actual));
+    _results.add(RoundResult(target: currentTarget.toDouble(), actual: actual));
     onLock?.call();
     _phase = GamePhase.reveal;
     notifyListeners();

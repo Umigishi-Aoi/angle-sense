@@ -1,28 +1,20 @@
-import 'dart:async';
-
 import 'package:material_ui/material_ui.dart';
 
 import '../game/game_session.dart';
 import '../game/scoring.dart';
 import '../services/angle_provider.dart';
-import '../services/best_score_store.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
+import '../view_models/game_view_model.dart';
 import '../widgets/angle_reveal.dart';
 import '../widgets/angle_text.dart';
 import '../widgets/inner_display_guard.dart';
 import '../widgets/judgement_burst.dart';
 import 'result_screen.dart';
 
-/// 結果画面が出てからレビュー依頼を出すまでの待ち時間。
-const reviewRequestDelay = Duration(milliseconds: 1500);
-
 class const GameScreen({
   super.key,
   required final AngleProvider angleProvider,
-
-  /// テストで差し替える用。null なら既定の保存先。
-  final BestScoreStore? bestScoreStore,
 
   /// 問題数（バトルは 1）。
   final int rounds = GameSession.defaultRounds,
@@ -37,160 +29,69 @@ class const GameScreen({
   State<GameScreen> createState() => _GameScreenState();
 }
 
+/// 表示と入力の受け渡しだけを行う。進行と判断は [GameViewModel]。
 class _GameScreenState() extends State<GameScreen> {
-  late final GameSession _session;
+  late final GameViewModel _vm;
   late final AppLifecycleListener _lifecycle;
-  bool _revealDone = false;
-  bool _finishing = false;
-  late final GameFeedback _fb;
-
-  // 効果音のきっかけ（段階・カウント・問題番号の変化）を見分けるための直前の値。
-  GamePhase? _lastPhase;
-  int? _lastCount;
-  int? _lastRound;
+  bool _endHandled = false;
 
   @override
   void initState() {
     super.initState();
-    _fb = context.feedback;
-    _session = GameSession(
+    _vm = GameViewModel(
       angleProvider: widget.angleProvider,
+      feedback: context.feedback,
+      settings: context.settings,
+      bestScores: context.bestScores,
+      requestReview: context.requestReview,
+      isBattle: widget.onFinished != null,
       rounds: widget.rounds,
-      onLock: () {
-        _fb
-          ..play(Sfx.lock)
-          ..haptic(HapticPattern.lock);
-      },
-    )..addListener(_onSessionChanged);
+    )..addListener(_onViewModelChanged);
     // バックグラウンドに回ったら一時停止。inactive では止めない
     // （Duo の開閉で画面が切り替わる瞬間に inactive が出る可能性があり、遊びそのものを止めてしまうため）。
-    _lifecycle = AppLifecycleListener(onPause: _session.pause);
-    // 閉じて外側の画面に移ったら一時停止（「ひらいてね」の裏で時間切れになって計測が確定しないように）。
-    // 内側に戻ると一時停止画面が見えるので、「再開」でこの問題をお題からやり直す。
-    widget.angleProvider.onOuterDisplay.addListener(_onOuterDisplay);
-    _session.start();
+    _lifecycle = AppLifecycleListener(onPause: _vm.pause);
+    _vm.start();
   }
 
-  void _onOuterDisplay() {
-    if (widget.angleProvider.onOuterDisplay.value) _session.pause();
-  }
-
-  void _onSessionChanged() {
-    if (_session.phase == GamePhase.finished) {
-      _finish();
+  void _onViewModelChanged() {
+    final end = _vm.ended;
+    if (end == null) {
+      setState(() {});
       return;
     }
-    if (_session.phase != GamePhase.reveal) _revealDone = false;
-    _playCues();
-    setState(() {});
-  }
-
-  /// お題のカウント・暗転開始・暗転中のカウントの音。
-  void _playCues() {
-    final phase = _session.phase;
-    final count = _session.countdown;
-    final round = _session.roundIndex;
-    if (_session.isPaused) {
-      // 再開したら（同じカウントでも）鳴らし直す。
-      _lastPhase = null;
-      return;
-    }
-    final changed =
-        phase != _lastPhase || count != _lastCount || round != _lastRound;
-    if (changed) {
-      if (phase == GamePhase.showTarget) {
-        _fb.play(Sfx.countdown);
-      } else if (phase == GamePhase.blind) {
-        if (_lastPhase != GamePhase.blind) {
-          _fb.play(Sfx.blindStart);
-        } else if (context.settings.blindTick) {
-          _fb.play(Sfx.tick);
-        }
-      }
-    }
-    _lastPhase = phase;
-    _lastCount = count;
-    _lastRound = round;
-  }
-
-  Future<void> _finish() async {
-    if (_finishing) return;
-    _finishing = true;
-    final onFinished = widget.onFinished;
-    if (onFinished != null) {
-      onFinished(List.of(_session.results));
-      return;
-    }
-    final store = widget.bestScoreStore ?? BestScoreStore();
-    var isNewBest = false;
-    int? best;
-    int? previousBest;
-    try {
-      previousBest = await store.load(
-        providerId: widget.angleProvider.id,
-        rounds: _session.rounds,
-      );
-      isNewBest = await store.submit(
-        providerId: widget.angleProvider.id,
-        rounds: _session.rounds,
-        score: _session.totalScore,
-      );
-      best = await store.load(
-        providerId: widget.angleProvider.id,
-        rounds: _session.rounds,
-      );
-    } on Exception catch (e) {
-      // 保存に失敗しても結果は見せる（記録欄だけ出さない）。
-      debugPrint('best score save failed: $e');
-    }
-    if (!mounted) return;
-    // 前の記録を上回ったときだけレビューを頼む（初回は誰でも「自己ベスト」になるので除く）。
-    if (isNewBest && previousBest != null) {
-      unawaited(_requestReviewLater(context.requestReview));
-    }
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute<void>(
-        builder: (_) => ResultScreen(
-          results: List.of(_session.results),
-          totalScore: _session.totalScore,
-          rank: _session.rank,
-          angleProvider: widget.angleProvider,
-          bestScoreStore: widget.bestScoreStore,
-          bestScore: best,
-          isNewBest: isNewBest,
-        ),
-      ),
-    );
-  }
-
-  /// 結果画面のランク表示と効果音が落ち着いてから頼む。
-  static Future<void> _requestReviewLater(
-    Future<void> Function() requestReview,
-  ) async {
-    await Future<void>.delayed(reviewRequestDelay);
-    try {
-      await requestReview();
-    } on Exception catch (e) {
-      // 出なくてもゲームには関係ない。
-      debugPrint('review request failed: $e');
+    if (_endHandled || !mounted) return;
+    _endHandled = true;
+    switch (end) {
+      case BattleGameEnd(:final results):
+        widget.onFinished?.call(results);
+      case SoloGameEnd():
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute<void>(
+            builder: (_) => ResultScreen(
+              results: end.results,
+              totalScore: end.totalScore,
+              rank: end.rank,
+              angleProvider: widget.angleProvider,
+              bestScore: end.bestScore,
+              isNewBest: end.isNewBest,
+            ),
+          ),
+        );
     }
   }
 
   /// 中断確認。表示中はタイマーを止め、キャンセルしたら同じ問題をお題からやり直す。
   Future<void> _confirmQuit() async {
-    // 結果の保存・遷移中はダイアログを出さない（遷移がダイアログを置き換えて GameScreen が残るのを防ぐ）。
-    if (_finishing || _session.phase == GamePhase.finished) return;
-    // 一時停止画面から開いた場合は、キャンセルしても一時停止画面に戻す（「再開」は押してから）。
-    final wasPaused = _session.isPaused;
-    _session.pause();
+    if (!_vm.canQuit) return;
+    final wasPaused = _vm.beginQuit();
     final quit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('ゲームをやめますか？'),
         content: Text(
-          widget.onFinished == null
-              ? 'ここまでの結果は保存されません。'
-              : 'やめると、この人の番はここで終わりです（計測前なら「計測なし」）。',
+          _vm.isBattle
+              ? 'やめると、この人の番はここで終わりです（計測前なら「計測なし」）。'
+              : 'ここまでの結果は保存されません。',
         ),
         actions: [
           TextButton(
@@ -205,41 +106,29 @@ class _GameScreenState() extends State<GameScreen> {
       ),
     );
     if (!mounted) return;
-    if (quit == true) {
-      final onFinished = widget.onFinished;
-      if (onFinished == null) {
-        Navigator.of(context).pop();
-        return;
-      }
-      // バトル: 抜けてやり直すことはできない。計測済みならその結果、計測前なら「計測なし」で確定。
-      _finishing = true;
-      final results = _session.results.isNotEmpty
-          ? List.of(_session.results)
-          : [
-              RoundResult(
-                target: _session.currentTarget.toDouble(),
-                actual: null,
-              ),
-            ];
-      onFinished(results);
-    } else if (!wasPaused) {
-      _session.resume();
+    if (quit != true) {
+      _vm.cancelQuit(wasPaused: wasPaused);
+      return;
+    }
+    if (_vm.isBattle) {
+      _vm.quit(); // 確定した結果は ended 経由で onFinished に渡る
+    } else {
+      Navigator.of(context).pop();
     }
   }
 
   @override
   void dispose() {
-    widget.angleProvider.onOuterDisplay.removeListener(_onOuterDisplay);
     _lifecycle.dispose();
-    _session
-      ..removeListener(_onSessionChanged)
+    _vm
+      ..removeListener(_onViewModelChanged)
       ..dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final blind = _session.phase == GamePhase.blind;
+    final blind = _vm.phase == GamePhase.blind;
     final fg = blind ? Colors.white54 : null;
     return PopScope(
       canPop: false,
@@ -274,7 +163,7 @@ class _GameScreenState() extends State<GameScreen> {
                                   ? const SizedBox.shrink()
                                   : Text(
                                       widget.title ??
-                                          '第 ${_session.roundIndex + 1} / ${_session.rounds} 問',
+                                          '第 ${_vm.roundIndex + 1} / ${widget.rounds} 問',
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -294,7 +183,7 @@ class _GameScreenState() extends State<GameScreen> {
                             duration: const Duration(milliseconds: 250),
                             child: KeyedSubtree(
                               key: ValueKey(
-                                '${_session.phase.name}-${_session.roundIndex}',
+                                '${_vm.phase.name}-${_vm.roundIndex}',
                               ),
                               child: _buildPhase(context),
                             ),
@@ -303,7 +192,7 @@ class _GameScreenState() extends State<GameScreen> {
                       ),
                     ],
                   ),
-                  if (_session.isPaused) _pausedOverlay(context),
+                  if (_vm.isPaused) _pausedOverlay(context),
                 ],
               ),
             ),
@@ -324,11 +213,11 @@ class _GameScreenState() extends State<GameScreen> {
             children: [
               Text('一時停止中', style: theme.textTheme.headlineMedium),
               const SizedBox(height: 8),
-              if (_session.phase == GamePhase.showTarget ||
-                  _session.phase == GamePhase.blind)
+              if (_vm.phase == GamePhase.showTarget ||
+                  _vm.phase == GamePhase.blind)
                 const Text('再開すると、この問題をお題からやり直します'),
               const SizedBox(height: 24),
-              FilledButton(onPressed: _session.resume, child: const Text('再開')),
+              FilledButton(onPressed: _vm.resume, child: const Text('再開')),
               const SizedBox(height: 8),
               TextButton(onPressed: _confirmQuit, child: const Text('やめる')),
             ],
@@ -340,7 +229,7 @@ class _GameScreenState() extends State<GameScreen> {
 
   Widget _buildPhase(BuildContext context) {
     final theme = Theme.of(context);
-    switch (_session.phase) {
+    switch (_vm.phase) {
       case GamePhase.showTarget:
         // お題の数字と、その角度の見本の絵を並べる（数字だけでは何度か想像しにくいため）。
         return Padding(
@@ -353,7 +242,7 @@ class _GameScreenState() extends State<GameScreen> {
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: AnglePreview(
                     key: const ValueKey('target_preview'),
-                    target: _session.currentTarget.toDouble(),
+                    target: _vm.currentTarget.toDouble(),
                   ),
                 ),
               ),
@@ -361,16 +250,16 @@ class _GameScreenState() extends State<GameScreen> {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  AngleText(_session.currentTarget, fontSize: 144),
+                  AngleText(_vm.currentTarget, fontSize: 144),
                   const SizedBox(height: 8),
                   Text(
-                    'あと ${_session.countdown} 秒で暗くなる',
+                    'あと ${_vm.countdown} 秒で暗くなる',
                     style: const TextStyle(fontSize: 20),
                   ),
                   const SizedBox(height: 12),
                   CountdownBar(
-                    remaining: _session.countdown,
-                    total: _session.showTargetSeconds,
+                    remaining: _vm.countdown,
+                    total: _vm.showTargetSeconds,
                     color: Retro.yellow,
                   ),
                 ],
@@ -384,13 +273,13 @@ class _GameScreenState() extends State<GameScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '${_session.currentTarget}°',
+              '${_vm.currentTarget}°',
               key: const ValueKey('blind_target'),
               style: const TextStyle(fontSize: 40, color: Colors.white70),
             ),
             const SizedBox(height: 16),
             Text(
-              '${_session.countdown}',
+              '${_vm.countdown}',
               style: const TextStyle(
                 fontSize: 160,
                 height: 1,
@@ -399,14 +288,14 @@ class _GameScreenState() extends State<GameScreen> {
             ),
             const SizedBox(height: 16),
             CountdownBar(
-              remaining: _session.countdown,
-              total: _session.blindSeconds,
+              remaining: _vm.countdown,
+              total: _vm.blindSeconds,
               color: Colors.white70,
             ),
           ],
         );
       case GamePhase.reveal:
-        final r = _session.lastResult!;
+        final r = _vm.lastResult!;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -420,15 +309,12 @@ class _GameScreenState() extends State<GameScreen> {
                     Flexible(
                       // 一時停止中はアニメを止める（ダイアログや一時停止画面の裏で判定音が鳴らないように）。
                       child: TickerMode(
-                        enabled: !_session.isPaused,
+                        enabled: !_vm.isPaused,
                         child: AngleReveal(
-                          key: ValueKey(_session.roundIndex),
+                          key: ValueKey(_vm.roundIndex),
                           target: r.target,
                           actual: r.actual,
-                          onCompleted: () {
-                            _fb.judgement(r.judgement);
-                            setState(() => _revealDone = true);
-                          },
+                          onCompleted: _vm.onRevealCompleted,
                         ),
                       ),
                     ),
@@ -436,7 +322,7 @@ class _GameScreenState() extends State<GameScreen> {
                     if (r.measured && r.error! <= zoomMaxError) ...[
                       const SizedBox(width: 24),
                       AnimatedOpacity(
-                        opacity: _revealDone ? 1 : 0,
+                        opacity: _vm.revealDone ? 1 : 0,
                         duration: const Duration(milliseconds: 300),
                         child: SizedBox(
                           width: 150,
@@ -465,11 +351,11 @@ class _GameScreenState() extends State<GameScreen> {
               ),
               const SizedBox(height: 16),
               AnimatedOpacity(
-                opacity: _revealDone ? 1 : 0,
+                opacity: _vm.revealDone ? 1 : 0,
                 duration: const Duration(milliseconds: 300),
                 child: Column(
                   children: [
-                    if (_revealDone)
+                    if (_vm.revealDone)
                       JudgementBurst(
                         judgement: r.judgement,
                         child: Text(
@@ -493,10 +379,10 @@ class _GameScreenState() extends State<GameScreen> {
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
-                      onPressed: _revealDone ? _session.next : null,
+                      onPressed: _vm.revealDone ? _vm.next : null,
                       child: Text(
-                        _session.isLastRound
-                            ? (widget.onFinished == null ? '結果へ' : '次へ')
+                        _vm.isLastRound
+                            ? (_vm.isBattle ? '次へ' : '結果へ')
                             : '次の問題',
                       ),
                     ),

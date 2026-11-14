@@ -1,9 +1,12 @@
 import 'package:flutter/foundation.dart';
 
-/// 実機確認用の記録（TestFlight 版ではログを見る手段が乏しいため、アプリ内に溜めて画面で見る）。
+/// 実機確認用の記録（実機ではログを見る手段が乏しいため、アプリ内に溜めて画面で見る）。
 ///
 /// 記録するもの: ヒンジの生の値（ラジアン・状態）、アプリの状態（AppLifecycleState）、画面サイズの変化。
 /// 設定 →「診断（実機確認用）」で表示・コピーできる。
+///
+/// その画面はデバッグ版だけに出すので、記録もデバッグ版だけ行う
+/// （リリース版でヒンジの更新ごとに文字列を作って溜めない）。
 class DiagnosticsLog._() extends ChangeNotifier {
   static final instance = DiagnosticsLog._();
 
@@ -19,6 +22,7 @@ class DiagnosticsLog._() extends ChangeNotifier {
   List<DiagnosticsEntry> get entries => List.unmodifiable(_entries);
 
   void add(String kind, String message) {
+    if (!kDebugMode) return;
     _entries.add(DiagnosticsEntry(DateTime.now(), kind, message));
     if (_entries.length > maxEntries) {
       _entries.removeRange(0, _entries.length - maxEntries);
@@ -27,6 +31,7 @@ class DiagnosticsLog._() extends ChangeNotifier {
   }
 
   void hinge(Map<String, Object?> args) {
+    if (!kDebugMode) return;
     lastHinge = args;
     final now = DateTime.now();
     _hingeTimes.add(now);
