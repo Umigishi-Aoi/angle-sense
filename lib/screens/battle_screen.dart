@@ -56,7 +56,7 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
                         '$_players 人',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.displaySmall?.copyWith(
-                          color: Retro.yellow,
+                          color: theme.colorScheme.primary,
                         ),
                       ),
                     ),
@@ -245,7 +245,7 @@ class _BattleScreenState() extends State<BattleScreen> {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 20,
-                  color: Retro.judgement(last.result.judgement),
+                  color: context.retroColors.judgement(last.result.judgement),
                 ),
               ),
               const SizedBox(height: 16),
@@ -257,7 +257,7 @@ class _BattleScreenState() extends State<BattleScreen> {
             Text(
               '${_name(_current)} の番',
               style: theme.textTheme.displaySmall?.copyWith(
-                color: Retro.yellow,
+                color: theme.colorScheme.primary,
               ),
             ),
             const SizedBox(height: 8),
@@ -269,12 +269,12 @@ class _BattleScreenState() extends State<BattleScreen> {
                 maxLength: BattleScreen.maxNameLength,
                 textAlign: TextAlign.center,
                 textInputAction: TextInputAction.done,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   hintText: '名前（入れなくてもOK）',
                   counterText: '',
                   isDense: true,
                   enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(color: Retro.line),
+                    borderSide: BorderSide(color: theme.colorScheme.outline),
                   ),
                 ),
               ),
@@ -297,7 +297,9 @@ class _BattleScreenState() extends State<BattleScreen> {
         const SizedBox(height: 8),
         Text(
           '結果発表',
-          style: theme.textTheme.headlineMedium?.copyWith(color: Retro.yellow),
+          style: theme.textTheme.headlineMedium?.copyWith(
+            color: theme.colorScheme.primary,
+          ),
         ),
         const SizedBox(height: 8),
         Expanded(
@@ -320,7 +322,9 @@ class _BattleScreenState() extends State<BattleScreen> {
                                 '$rank位',
                                 style: TextStyle(
                                   fontSize: 22,
-                                  color: rank == 1 ? Retro.yellow : Retro.text,
+                                  color: rank == 1
+                                      ? theme.colorScheme.primary
+                                      : theme.colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -340,7 +344,7 @@ class _BattleScreenState() extends State<BattleScreen> {
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Retro.judgement(
+                                      color: context.retroColors.judgement(
                                         e.result.judgement,
                                       ),
                                     ),
@@ -361,9 +365,12 @@ class _BattleScreenState() extends State<BattleScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'みんなの感覚のズレ',
-                        style: TextStyle(fontSize: 18, color: Retro.cyan),
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: theme.colorScheme.secondary,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       DeviationChart(

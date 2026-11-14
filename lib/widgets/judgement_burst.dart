@@ -31,14 +31,30 @@ class _JudgementBurstState()
   late final AnimationController _c = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1100),
-  )..forward();
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (context.reduceMotion) {
+      // 動きを控える設定: 演出の最後の状態（紙吹雪は消え、文字は等倍）で止める。
+      _c.value = 1;
+    } else if (_c.isDismissed && !_c.isAnimating) {
+      _c.forward();
+    }
+  }
 
   late final List<_Particle> _particles = _makeParticles();
 
   List<_Particle> _makeParticles() {
     final n = JudgementBurst.particleCount(widget.judgement);
     final rnd = math.Random(widget.judgement.index * 7919 + n);
-    const colors = [Retro.yellow, Retro.cyan, Colors.white];
+    final scheme = Theme.of(context).colorScheme;
+    final colors = [
+      scheme.primary,
+      scheme.secondary,
+      context.retroColors.sparkle,
+    ];
     return [
       for (var i = 0; i < n; i++)
         _Particle(
@@ -64,33 +80,37 @@ class _JudgementBurstState()
       Judgement.great => 0.25,
       _ => 0.0,
     };
-    return AnimatedBuilder(
-      animation: _c,
-      builder: (context, child) {
-        // 最初の 40% で大きくなって戻る
-        final t = (_c.value / 0.4).clamp(0.0, 1.0);
-        final scale = 1 + pop * math.sin(t * math.pi);
-        return Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            if (_particles.isNotEmpty)
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _BurstPainter(
-                      _particles,
-                      _c.value,
-                      gravity: big ? 380 : 300,
+    // 紙吹雪と弾みは毎フレーム描き直すので、下の誤差の文字やボタンを巻き込まないよう分ける。
+    // （RepaintBoundary は切り抜かないので、枠の外に飛ぶ粒もそのまま見える）
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _c,
+        builder: (context, child) {
+          // 最初の 40% で大きくなって戻る
+          final t = (_c.value / 0.4).clamp(0.0, 1.0);
+          final scale = 1 + pop * math.sin(t * math.pi);
+          return Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.center,
+            children: [
+              if (_particles.isNotEmpty)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _BurstPainter(
+                        _particles,
+                        _c.value,
+                        gravity: big ? 380 : 300,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            Transform.scale(scale: scale, child: child),
-          ],
-        );
-      },
-      child: widget.child,
+              Transform.scale(scale: scale, child: child),
+            ],
+          );
+        },
+        child: widget.child,
+      ),
     );
   }
 }
@@ -135,5 +155,6 @@ class _BurstPainter(
   }
 
   @override
-  bool shouldRepaint(covariant _BurstPainter old) => old.t != t;
+  bool shouldRepaint(covariant _BurstPainter old) =>
+      old.t != t || old.gravity != gravity || old.particles != particles;
 }

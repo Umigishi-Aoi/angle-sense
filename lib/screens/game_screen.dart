@@ -129,7 +129,8 @@ class _GameScreenState() extends State<GameScreen> {
   @override
   Widget build(BuildContext context) {
     final blind = _vm.phase == GamePhase.blind;
-    final fg = blind ? Colors.white54 : null;
+    final retro = context.retroColors;
+    final fg = blind ? retro.blindIcon : null;
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -140,7 +141,7 @@ class _GameScreenState() extends State<GameScreen> {
         body: AnimatedContainer(
           duration: const Duration(milliseconds: 350),
           color: blind
-              ? Colors.black
+              ? retro.blindBackground
               : Theme.of(context).scaffoldBackgroundColor,
           child: InnerDisplayGuard(
             angleProvider: widget.angleProvider,
@@ -179,8 +180,12 @@ class _GameScreenState() extends State<GameScreen> {
                       Expanded(
                         child: Center(
                           // お題→暗転→答え合わせの切り替えをフェードでつなぐ。
+                          // 「アニメーションを削除」設定のときは切り替えを即時にする。
+                          // iOS の「視差効果を減らす」はフェードを推奨しているので、こちらは残す。
                           child: AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 250),
+                            duration: MediaQuery.disableAnimationsOf(context)
+                                ? Duration.zero
+                                : const Duration(milliseconds: 250),
                             child: KeyedSubtree(
                               key: ValueKey(
                                 '${_vm.phase.name}-${_vm.roundIndex}',
@@ -229,6 +234,7 @@ class _GameScreenState() extends State<GameScreen> {
 
   Widget _buildPhase(BuildContext context) {
     final theme = Theme.of(context);
+    final retro = context.retroColors;
     switch (_vm.phase) {
       case GamePhase.showTarget:
         // お題の数字と、その角度の見本の絵を並べる（数字だけでは何度か想像しにくいため）。
@@ -260,7 +266,7 @@ class _GameScreenState() extends State<GameScreen> {
                   CountdownBar(
                     remaining: _vm.countdown,
                     total: _vm.showTargetSeconds,
-                    color: Retro.yellow,
+                    color: theme.colorScheme.primary,
                   ),
                 ],
               ),
@@ -275,22 +281,22 @@ class _GameScreenState() extends State<GameScreen> {
             Text(
               '${_vm.currentTarget}°',
               key: const ValueKey('blind_target'),
-              style: const TextStyle(fontSize: 40, color: Colors.white70),
+              style: TextStyle(fontSize: 40, color: retro.blindText),
             ),
             const SizedBox(height: 16),
             Text(
               '${_vm.countdown}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 160,
                 height: 1,
-                color: Colors.white70,
+                color: retro.blindText,
               ),
             ),
             const SizedBox(height: 16),
             CountdownBar(
               remaining: _vm.countdown,
               total: _vm.blindSeconds,
-              color: Colors.white70,
+              color: retro.blindText,
             ),
           ],
         );
@@ -344,7 +350,7 @@ class _GameScreenState() extends State<GameScreen> {
                   _legend(theme.colorScheme.primary, '目標 ${r.target.round()}°'),
                   const SizedBox(width: 24),
                   _legend(
-                    theme.colorScheme.tertiary,
+                    theme.colorScheme.secondary,
                     r.measured ? 'あなた ${r.actual!.round()}°' : 'あなた 計測なし',
                   ),
                 ],
@@ -361,7 +367,7 @@ class _GameScreenState() extends State<GameScreen> {
                         child: Text(
                           r.judgement.label,
                           style: theme.textTheme.displaySmall?.copyWith(
-                            color: Retro.judgement(r.judgement),
+                            color: retro.judgement(r.judgement),
                           ),
                         ),
                       )
@@ -369,7 +375,7 @@ class _GameScreenState() extends State<GameScreen> {
                       Text(
                         r.judgement.label,
                         style: theme.textTheme.displaySmall?.copyWith(
-                          color: Retro.judgement(r.judgement),
+                          color: retro.judgement(r.judgement),
                         ),
                       ),
                     Text(
@@ -410,6 +416,9 @@ class _GameScreenState() extends State<GameScreen> {
 const zoomMaxError = 10.0;
 
 /// 残り秒数をドットの四角で出す（1秒=1マス。減っていくのが一目で分かるように）。
+///
+/// 1マスは 28px（間隔込みで 36px）。秒数が増えて幅に収まらないときだけ全体を縮める
+/// （収まるときは等倍のまま）。
 class const CountdownBar({
   super.key,
   required final int remaining,
@@ -418,20 +427,23 @@ class const CountdownBar({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (var i = 0; i < total; i++)
-          Container(
-            width: 28,
-            height: 28,
-            margin: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: i < remaining ? color : Colors.transparent,
-              border: Border.all(color: color, width: Retro.px),
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < total; i++)
+            Container(
+              width: 28,
+              height: 28,
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              decoration: BoxDecoration(
+                color: i < remaining ? color : Colors.transparent,
+                border: Border.all(color: color, width: Retro.px),
+              ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }

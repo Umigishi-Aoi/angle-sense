@@ -245,4 +245,78 @@ void main() {
     expect(fb.events, contains('blindStart'));
     await tester.pumpAndSettle();
   });
+
+  group('CountdownBar', () {
+    Future<Size> pumpBar(
+      WidgetTester tester,
+      int total, {
+      double? width,
+    }) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Center(
+            child: SizedBox(
+              width: width,
+              child: Center(
+                child: CountdownBar(
+                  remaining: 1,
+                  total: total,
+                  color: const Color(0xFFFFFFFF),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      return tester.getSize(find.byType(CountdownBar));
+    }
+
+    testWidgets('3 秒・5 秒は今までどおり 1 マス 36px の等倍', (tester) async {
+      expect(await pumpBar(tester, 3), const Size(108, 28));
+      expect(await pumpBar(tester, 5), const Size(180, 28));
+    });
+
+    testWidgets('幅に収まらない秒数は、はみ出さずに縮めて並べる', (tester) async {
+      final size = await pumpBar(tester, 20, width: 300);
+      expect(tester.takeException(), isNull);
+      expect(size.width, lessThanOrEqualTo(300));
+    });
+  });
+
+  testWidgets('「アニメーションを削除」設定ではお題→暗転→答え合わせの切り替えを即時にする', (tester) async {
+    Future<Duration?> switcherDuration(
+      MediaQueryData Function(MediaQueryData) edit,
+    ) async {
+      final settings = AppSettings();
+      await tester.pumpWidget(
+        AppServices(
+          settings: settings,
+          feedback: RecordingFeedback(settings),
+          bestScores: inMemoryBestScores(),
+          child: MaterialApp(
+            builder: (context, child) =>
+                MediaQuery(data: edit(MediaQuery.of(context)), child: child!),
+            home: GameScreen(
+              angleProvider: FakeAngleProvider()..latestAngle = 45,
+            ),
+          ),
+        ),
+      );
+      final d = tester
+          .widget<AnimatedSwitcher>(find.byType(AnimatedSwitcher))
+          .duration;
+      await tester.pumpWidget(const SizedBox()); // タイマーを残さない
+      return d;
+    }
+
+    expect(
+      await switcherDuration((d) => d.copyWith(disableAnimations: true)),
+      Duration.zero,
+    );
+    // iOS の「視差効果を減らす」はフェードを推奨しているので、フェードは残す。
+    expect(
+      await switcherDuration((d) => d.copyWith(reduceMotion: true)),
+      const Duration(milliseconds: 250),
+    );
+  });
 }

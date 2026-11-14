@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
+import '../ui/retro_theme.dart';
+
 /// 答え合わせ: 折りたたみを横から見た図。左半分（固定の面）を水平に置き、右半分を
 /// 0°（平ら）から実際の角度まで持ち上げて、目標線と重ねる。[actual] が null（計測なし）なら目標線だけ描く。
 class const AngleReveal({
@@ -18,17 +20,36 @@ class const AngleReveal({
 class _AngleRevealState()
     extends State<AngleReveal>
     with SingleTickerProviderStateMixin {
+  /// 動きを控える設定のときの長さ。0 にすると build 中に完了通知が同期で走るので、
+  /// 1 フレーム後に終わる程度の長さにする（一時停止中は TickerMode で止まるのも同じ）。
+  static const _reducedDuration = Duration(milliseconds: 1);
+
   late final AnimationController _controller =
-      AnimationController(vsync: this, duration: widget.duration)
-        ..addStatusListener((s) {
-          if (s == AnimationStatus.completed) widget.onCompleted?.call();
-        })
-        ..forward();
+      AnimationController(
+        vsync: this,
+        duration: widget.duration,
+      )..addStatusListener((s) {
+        if (s == AnimationStatus.completed) widget.onCompleted?.call();
+      });
 
   late final Animation<double> _sweep = CurvedAnimation(
     parent: _controller,
     curve: Curves.easeOutBack,
   );
+
+  /// 動きを控えるときは、振り上げずに最初から最後の形で描く。
+  bool _reduceMotion = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _reduceMotion = context.reduceMotion;
+    if (_controller.isDismissed && !_controller.isAnimating) {
+      _controller
+        ..duration = _reduceMotion ? _reducedDuration : widget.duration
+        ..forward();
+    }
+  }
 
   @override
   void dispose() {
@@ -41,20 +62,26 @@ class _AngleRevealState()
     final scheme = Theme.of(context).colorScheme;
     return AspectRatio(
       aspectRatio: _ArcPainter.cols / _ArcPainter.rows,
-      child: AnimatedBuilder(
-        animation: _sweep,
-        builder: (context, _) => CustomPaint(
-          painter: _ArcPainter(
-            target: widget.target,
-            actual: widget.actual == null
-                ? null
-                : widget.actual! * _sweep.value,
-            showDiff: _controller.isCompleted && widget.actual != null,
-            finalActual: widget.actual,
-            targetColor: scheme.primary,
-            actualColor: scheme.tertiary,
-            gridColor: scheme.outlineVariant,
-          ),
+      // 振り上げの間は毎フレーム描き直すので、周り（凡例・判定の文字）を巻き込まないよう分ける。
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _sweep,
+          builder: (context, _) {
+            final done = _reduceMotion || _controller.isCompleted;
+            return CustomPaint(
+              painter: _ArcPainter(
+                target: widget.target,
+                actual: widget.actual == null
+                    ? null
+                    : widget.actual! * (_reduceMotion ? 1.0 : _sweep.value),
+                showDiff: done && widget.actual != null,
+                finalActual: widget.actual,
+                targetColor: scheme.primary,
+                actualColor: scheme.secondary,
+                gridColor: scheme.outlineVariant,
+              ),
+            );
+          },
         ),
       ),
     );
@@ -80,7 +107,7 @@ class const AnglePreview({
           showDiff: false,
           finalActual: null,
           targetColor: color ?? scheme.primary,
-          actualColor: scheme.tertiary,
+          actualColor: scheme.secondary,
           gridColor: scheme.outlineVariant,
         ),
       ),
@@ -120,7 +147,7 @@ class const AngleZoom({
                 target: target,
                 actual: actual.clamp(0, _ArcPainter.maxDrawDeg).toDouble(),
                 targetColor: scheme.primary,
-                actualColor: scheme.tertiary,
+                actualColor: scheme.secondary,
                 gridColor: scheme.outlineVariant,
               ),
             ),
@@ -130,7 +157,7 @@ class const AngleZoom({
         Text(
           signedLabel(target, actual),
           key: const ValueKey('signed_error'),
-          style: TextStyle(fontSize: 24, color: scheme.tertiary),
+          style: TextStyle(fontSize: 24, color: scheme.secondary),
         ),
       ],
     );
@@ -229,7 +256,11 @@ class _ZoomPainter({
 
   @override
   bool shouldRepaint(covariant _ZoomPainter old) =>
-      old.target != target || old.actual != actual;
+      old.target != target ||
+      old.actual != actual ||
+      old.targetColor != targetColor ||
+      old.actualColor != actualColor ||
+      old.gridColor != gridColor;
 }
 
 /// ドット絵風に描く: 56×32 マスの格子に塗りつぶした四角を並べる（アンチエイリアスなし）。
@@ -349,5 +380,11 @@ class _ArcPainter({
 
   @override
   bool shouldRepaint(covariant _ArcPainter old) =>
-      old.actual != actual || old.target != target || old.showDiff != showDiff;
+      old.actual != actual ||
+      old.target != target ||
+      old.showDiff != showDiff ||
+      old.finalActual != finalActual ||
+      old.targetColor != targetColor ||
+      old.actualColor != actualColor ||
+      old.gridColor != gridColor;
 }

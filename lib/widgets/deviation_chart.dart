@@ -21,27 +21,29 @@ class const DeviationChart({
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final retro = context.retroColors;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const Row(
+        Row(
           children: [
-            SizedBox(width: _labelWidth),
+            const SizedBox(width: _labelWidth),
             Expanded(
               child: Row(
                 children: [
-                  Text('← 足りない', style: TextStyle(color: Retro.dim)),
-                  Spacer(),
-                  Text('ピタッ', style: TextStyle(color: Retro.yellow)),
-                  Spacer(),
-                  Text('折りすぎ →', style: TextStyle(color: Retro.dim)),
+                  Text('← 足りない', style: TextStyle(color: retro.dim)),
+                  const Spacer(),
+                  Text('ピタッ', style: TextStyle(color: scheme.primary)),
+                  const Spacer(),
+                  Text('折りすぎ →', style: TextStyle(color: retro.dim)),
                 ],
               ),
             ),
           ],
         ),
         const SizedBox(height: 4),
-        for (final (name, result) in rows) _row(name, result),
+        for (final (name, result) in rows) _row(name, result, scheme, retro),
         const SizedBox(height: 4),
         Row(
           children: [
@@ -51,12 +53,12 @@ class const DeviationChart({
                 children: [
                   Text(
                     '-${range.round()}°',
-                    style: const TextStyle(color: Retro.dim, fontSize: 12),
+                    style: TextStyle(color: retro.dim, fontSize: 12),
                   ),
                   const Spacer(),
                   Text(
                     '+${range.round()}°',
-                    style: const TextStyle(color: Retro.dim, fontSize: 12),
+                    style: TextStyle(color: retro.dim, fontSize: 12),
                   ),
                 ],
               ),
@@ -71,7 +73,12 @@ class const DeviationChart({
   static const _rowHeight = 30.0;
   static const _dot = 14.0;
 
-  Widget _row(String name, RoundResult result) {
+  Widget _row(
+    String name,
+    RoundResult result,
+    ColorScheme scheme,
+    RetroColors retro,
+  ) {
     final err = signedError(result);
     return SizedBox(
       height: _rowHeight,
@@ -93,12 +100,12 @@ class const DeviationChart({
                 final w = c.maxWidth;
                 final children = <Widget>[
                   // 物差し
-                  const Positioned(
+                  Positioned(
                     left: 0,
                     right: 0,
                     top: _rowHeight / 2 - 1,
                     height: 2,
-                    child: ColoredBox(color: Retro.line),
+                    child: ColoredBox(color: scheme.outline),
                   ),
                   // ピタッの線
                   Positioned(
@@ -106,15 +113,15 @@ class const DeviationChart({
                     width: 2,
                     top: 2,
                     bottom: 2,
-                    child: const ColoredBox(color: Retro.yellow),
+                    child: ColoredBox(color: scheme.primary),
                   ),
                 ];
                 if (err == null) {
                   children.add(
-                    const Center(
+                    Center(
                       child: Text(
                         '計測なし',
-                        style: TextStyle(color: Retro.red, fontSize: 14),
+                        style: TextStyle(color: scheme.error, fontSize: 14),
                       ),
                     ),
                   );
@@ -130,7 +137,7 @@ class const DeviationChart({
                       height: _dot,
                       child: ColoredBox(
                         key: ValueKey('dev_$name'),
-                        color: Retro.judgement(result.judgement),
+                        color: retro.judgement(result.judgement),
                       ),
                     ),
                   );
@@ -145,7 +152,7 @@ class const DeviationChart({
                           err > 0 ? Icons.arrow_right : Icons.arrow_left,
                           key: ValueKey('over_$name'),
                           size: 18,
-                          color: Retro.red,
+                          color: scheme.error,
                         ),
                       ),
                     );

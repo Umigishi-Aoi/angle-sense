@@ -37,6 +37,33 @@ class FakeAngleProvider() implements AngleProvider {
   Future<void> stop() async {}
 }
 
+/// テストから角度を流せる入力源（センサーの更新を真似る）。
+class StreamAngleProvider() implements AngleProvider {
+  final _controller = StreamController<double>.broadcast();
+  @override
+  double? latestAngle;
+  @override
+  Stream<double> get angleStream => _controller.stream;
+  @override
+  String get id => 'fake';
+  @override
+  String get label => 'fake';
+  @override
+  final ValueNotifier<bool> onOuterDisplay = ValueNotifier(false);
+  @override
+  Future<void> start() async {}
+  @override
+  Future<void> stop() async {}
+
+  /// 新しい角度を届ける。
+  void emit(double angle) {
+    latestAngle = angle;
+    _controller.add(angle);
+  }
+
+  Future<void> close() => _controller.close();
+}
+
 /// 端末保存を空のメモリ実装に差し替える（前のテストの保存内容を持ち越さない）。
 void useInMemoryPrefs() {
   SharedPreferencesAsyncPlatform.instance =

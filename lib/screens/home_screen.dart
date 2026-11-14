@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:material_ui/material_ui.dart';
 
@@ -5,7 +7,6 @@ import '../app/route_observer.dart';
 import '../game/game_session.dart';
 import '../services/angle_provider.dart';
 import '../services/feedback.dart';
-import '../ui/retro_theme.dart';
 import '../utils/result.dart';
 import '../widgets/angle_reveal.dart';
 import '../widgets/angle_text.dart';
@@ -26,16 +27,48 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
   late Future<int?> _best = _loadBest();
   bool _starting = false;
 
+  // センサーの値は 1 秒に数十回届く。画面全体を作り直さないよう、
+  // 角度の絵と数字は [_angle]、ボタンなどは角度が取れたかどうか（[_ready]）が変わったときだけ作り直す。
+  late final ValueNotifier<double?> _angle = ValueNotifier(
+    widget.angleProvider.latestAngle,
+  );
+  late final ValueNotifier<bool> _ready = ValueNotifier(
+    widget.angleProvider.latestAngle != null,
+  );
+  late final StreamSubscription<double> _angleSub;
+
+  /// ゲーム画面などに覆われて見えていない間は false（角度の絵を描き直さない）。
+  bool _visible = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _angleSub = widget.angleProvider.angleStream.listen(_onAngle);
+  }
+
+  void _onAngle(double _) {
+    final latest = widget.angleProvider.latestAngle;
+    _ready.value = latest != null;
+    if (_visible) _angle.value = latest;
+  }
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final route = ModalRoute.of(context);
     if (route != null) routeObserver.subscribe(this, route);
+    // 不透明な画面に覆われると、その下の画面は TickerMode が無効になる（ダイアログ等では無効にならない）。
+    final visible = TickerMode.valuesOf(context).enabled;
+    if (visible && !_visible) _angle.value = widget.angleProvider.latestAngle;
+    _visible = visible;
   }
 
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    unawaited(_angleSub.cancel());
+    _angle.dispose();
+    _ready.dispose();
     super.dispose();
   }
 
@@ -94,16 +127,14 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
         angleProvider: provider,
         child: SafeArea(
           child: Center(
-            child: StreamBuilder<double>(
-              stream: provider.angleStream,
-              initialData: provider.latestAngle,
-              builder: (context, snap) {
-                final ready = provider.latestAngle != null;
+            child: ValueListenableBuilder<bool>(
+              valueListenable: _ready,
+              builder: (context, ready, _) {
                 final info = <Widget>[
                   Text(
                     'ピタッとアングル',
                     style: theme.textTheme.displaySmall?.copyWith(
-                      color: Retro.yellow,
+                      color: theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -117,25 +148,13 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
                   ),
                   // 今の角度を絵と数字で出す（ゲーム中は出さない）。動かすと線が動くので、遊び方が伝わる。
                   ready
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            SizedBox(
-                              width: 120,
-                              child: AnglePreview(
-                                key: const ValueKey('home_preview'),
-                                target: provider.latestAngle!,
-                                color: Retro.cyan,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            // 0°〜180° のどれでも幅を同じにする（桁が変わっても絵がずれない）。
-                            AngleText(
-                              provider.latestAngle!,
-                              fontSize: 32,
-                              reserveWidthFor: '180°',
-                            ),
-                          ],
+                      // 角度が変わるたびに描き直すので、周りの文字やボタンを巻き込まないよう分ける。
+                      ? RepaintBoundary(
+                          child: ValueListenableBuilder<double?>(
+                            valueListenable: _angle,
+                            builder: (context, angle, _) =>
+                                _livePreview(theme, angle ?? 0),
+                          ),
                         )
                       : const Text('角度: --'),
                   const SizedBox(height: 8),
@@ -217,6 +236,24 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
       ),
     );
   }
+
+  /// 今の角度の絵と数字。
+  Widget _livePreview(ThemeData theme, double angle) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      SizedBox(
+        width: 120,
+        child: AnglePreview(
+          key: const ValueKey('home_preview'),
+          target: angle,
+          color: theme.colorScheme.secondary,
+        ),
+      ),
+      const SizedBox(width: 12),
+      // 0°〜180° のどれでも幅を同じにする（桁が変わっても絵がずれない）。
+      AngleText(angle, fontSize: 32, reserveWidthFor: '180°'),
+    ],
+  );
 
   static const _howToHinge =
       '1. 内側の画面を見ながら、本を読むように両手で持つ\n'

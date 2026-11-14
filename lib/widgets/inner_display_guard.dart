@@ -1,7 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../services/angle_provider.dart';
-import '../ui/retro_theme.dart';
 
 /// iPhone Duo で外側の画面に移ったときに「開いて内側を見てね」と出す。
 ///
@@ -32,7 +31,7 @@ class const _OuterNotice() extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ColoredBox(
-      color: Retro.bg,
+      color: theme.colorScheme.surface,
       child: SafeArea(
         child: Center(
           child: Padding(
@@ -43,7 +42,7 @@ class const _OuterNotice() extends StatelessWidget {
                 Text(
                   'ひらいてね',
                   style: theme.textTheme.displaySmall?.copyWith(
-                    color: Retro.yellow,
+                    color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 16),

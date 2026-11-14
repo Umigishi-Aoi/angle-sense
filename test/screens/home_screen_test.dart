@@ -5,6 +5,7 @@ import 'package:hinge_angle_game/screens/home_screen.dart';
 import 'package:hinge_angle_game/services/app_settings.dart';
 import 'package:hinge_angle_game/services/feedback.dart';
 import 'package:hinge_angle_game/ui/retro_theme.dart';
+import 'package:hinge_angle_game/widgets/angle_reveal.dart';
 import 'package:material_ui/material_ui.dart';
 
 import '../helpers/fakes.dart';
@@ -123,4 +124,81 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'やめる'));
     await tester.pumpAndSettle();
   }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
+
+  group('角度が届いたときに作り直す範囲', () {
+    late StreamAngleProvider provider;
+
+    Future<void> pumpHome(WidgetTester tester) async {
+      final settings = AppSettings();
+      provider = StreamAngleProvider();
+      addTearDown(provider.close);
+      await tester.pumpWidget(
+        AppServices(
+          settings: settings,
+          feedback: RecordingFeedback(settings),
+          bestScores: inMemoryBestScores(),
+          child: MaterialApp(home: HomeScreen(angleProvider: provider)),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    /// 角度を届けて画面に反映させる（ストリームの配送はマイクロタスクで後から届くので 2 回 pump する）。
+    Future<void> emit(WidgetTester tester, double angle) async {
+      provider.emit(angle);
+      await tester.pump();
+      await tester.pump();
+    }
+
+    // 作り直されていなければ、同じウィジェットのインスタンスのまま。
+    Widget startButton(WidgetTester tester) =>
+        tester.widget(find.widgetWithText(FilledButton, 'ひとりで（5問）'));
+
+    testWidgets('角度が変わっても、ボタンは作り直さず角度の絵と数字だけ更新する', (tester) async {
+      await pumpHome(tester);
+      expect(find.text('角度: --'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(find.widgetWithText(FilledButton, 'ひとりで（5問）'))
+            .onPressed,
+        isNull,
+      );
+
+      await emit(tester, 10); // 初めて角度が取れた → ボタンが押せるようになる
+      final button = startButton(tester);
+      expect((button as FilledButton).onPressed, isNotNull);
+      expect(find.text('10°'), findsOneWidget);
+
+      for (final angle in [20.0, 30.0, 40.0, 50.0]) {
+        await emit(tester, angle);
+        expect(find.text('${angle.round()}°'), findsOneWidget);
+        expect(identical(startButton(tester), button), isTrue);
+      }
+    });
+
+    testWidgets('ゲーム画面に覆われている間は角度の絵を作り直さず、戻ったら最新にする', (tester) async {
+      await pumpHome(tester);
+      await emit(tester, 10);
+      final nav = tester.state<NavigatorState>(find.byType(Navigator))
+        ..push(
+          MaterialPageRoute<void>(
+            builder: (_) => const Scaffold(body: Text('cover')),
+          ),
+        );
+      await tester.pumpAndSettle();
+      final preview = find.byKey(
+        const ValueKey('home_preview'),
+        skipOffstage: false,
+      );
+      final covered = tester.widget<AnglePreview>(preview);
+
+      await emit(tester, 60);
+      expect(identical(tester.widget<AnglePreview>(preview), covered), isTrue);
+
+      nav.pop();
+      await tester.pumpAndSettle();
+      expect(tester.widget<AnglePreview>(preview).target, 60);
+      expect(find.text('60°'), findsOneWidget);
+    });
+  });
 }

@@ -15,6 +15,8 @@ class const DiagnosticsScreen({
     final log = DiagnosticsLog.instance;
     final size = MediaQuery.sizeOf(context);
     final dpr = MediaQuery.devicePixelRatioOf(context);
+    final scheme = Theme.of(context).colorScheme;
+    final dim = context.retroColors.dim;
     return Scaffold(
       appBar: AppBar(title: const Text('診断')),
       // 外側画面の右上にはカメラ・時刻の表示があるので、左右の安全領域を空ける。
@@ -42,9 +44,9 @@ class const DiagnosticsScreen({
                         const Text('ゲームに使う角度（平ら=0° / 直角=90°）'),
                         Text(
                           '$angle°',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 48,
-                            color: Retro.yellow,
+                            color: scheme.primary,
                           ),
                         ),
                         if (h != null) ...[
@@ -58,9 +60,9 @@ class const DiagnosticsScreen({
                           '(×${dpr.toStringAsFixed(1)})',
                         ),
                         const SizedBox(height: 8),
-                        const Text(
+                        Text(
                           '確認: ①閉じる→0° ②全開→180° ③開閉で状態の記録を見る',
-                          style: TextStyle(color: Retro.dim),
+                          style: TextStyle(color: dim),
                         ),
                         const SizedBox(height: 12),
                         // 外側画面の右上はカメラと重なるので、ボタンは上部バーでなくここに置く。
@@ -95,8 +97,8 @@ class const DiagnosticsScreen({
                         style: TextStyle(
                           fontSize: 16,
                           color: entries[i].kind == 'hinge'
-                              ? Retro.dim
-                              : Retro.cyan,
+                              ? dim
+                              : scheme.secondary,
                         ),
                       ),
                     ),

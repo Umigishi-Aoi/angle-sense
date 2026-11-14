@@ -55,6 +55,7 @@ class _ResultScreenState() extends State<ResultScreen> {
     final bestScore = widget.bestScore;
     final isNewBest = widget.isNewBest;
     final theme = Theme.of(context);
+    final retro = context.retroColors;
     final summary = <Widget>[
       Text('ランク', style: theme.textTheme.titleMedium),
       Text(
@@ -62,7 +63,7 @@ class _ResultScreenState() extends State<ResultScreen> {
         style: theme.textTheme.displayLarge?.copyWith(
           fontSize: 96,
           height: 1.1,
-          color: Retro.yellow,
+          color: theme.colorScheme.primary,
         ),
       ),
       Text(
@@ -102,9 +103,9 @@ class _ResultScreenState() extends State<ResultScreen> {
     final details = ListView(
       padding: const EdgeInsets.fromLTRB(8, 8, 24, 16),
       children: [
-        const Text(
+        Text(
           'あなたの感覚のズレ',
-          style: TextStyle(fontSize: 18, color: Retro.cyan),
+          style: TextStyle(fontSize: 18, color: theme.colorScheme.secondary),
         ),
         const SizedBox(height: 4),
         DeviationChart(
@@ -130,7 +131,7 @@ class _ResultScreenState() extends State<ResultScreen> {
                 Text(
                   '${results[i].judgement.label}  ${results[i].points}',
                   style: TextStyle(
-                    color: Retro.judgement(results[i].judgement),
+                    color: retro.judgement(results[i].judgement),
                   ),
                 ),
               ],
