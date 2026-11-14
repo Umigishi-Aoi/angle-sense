@@ -1,5 +1,3 @@
-import 'dart:ffi' as ffi;
-
 import 'package:objective_c/objective_c.dart' as objc;
 import 'package:pub_semver/pub_semver.dart';
 
@@ -24,9 +22,6 @@ class DuoHingeObserver._(
   final UIView _view,
   final UIHingeInteraction _interaction,
 ) {
-  /// 今のスレッドがメインスレッドか（試作の確認用）。
-  static bool get isMainThread => _pthreadMainNp() != 0;
-
   /// 監視を始める。iOS 27.1 未満・画面が取れない場合は null。
   /// [onUpdate] には、ヒンジ情報が無い階層（Duo 以外）では null が届く。
   static DuoHingeObserver? start(void Function(HingeUpdate?) onUpdate) {
@@ -73,6 +68,3 @@ class DuoHingeObserver._(
     UIHingeStatus.UIHingeStatusUnknown => HingeStatus.unknown,
   };
 }
-
-final int Function() _pthreadMainNp = ffi.DynamicLibrary.process()
-    .lookupFunction<ffi.Int32 Function(), int Function()>('pthread_main_np');

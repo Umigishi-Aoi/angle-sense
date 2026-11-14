@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'angle_provider.dart';
 import 'demo_angle_provider.dart';
-import 'ffi_hinge_angle_provider.dart';
+import 'hinge_angle_provider.dart';
 import 'tilt_angle_provider.dart';
 
 /// Duo（ヒンジが取れる端末）ならヒンジ、それ以外は傾きを返す。開始済みの状態で返す。
@@ -13,7 +13,7 @@ Future<AngleProvider> resolveAngleProvider() async {
     return demo;
   }
   if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
-    final hinge = FfiHingeAngleProvider();
+    final hinge = HingeAngleProvider();
     try {
       await hinge.start();
       if (await hinge.waitForAvailability()) return hinge;

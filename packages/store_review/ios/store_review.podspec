@@ -5,9 +5,9 @@
 Pod::Spec.new do |s|
   s.name             = 'store_review'
   s.version          = '0.0.1'
-  s.summary          = 'A new Flutter plugin project.'
+  s.summary          = 'Asks iOS to show the App Store review prompt (StoreKit 2).'
   s.description      = <<-DESC
-A new Flutter plugin project.
+Asks iOS to show the App Store review prompt (StoreKit 2).
                        DESC
   s.homepage         = 'http://example.com'
   s.license          = { :file => '../LICENSE' }

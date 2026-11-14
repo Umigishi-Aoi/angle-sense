@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoPageTransition;
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hinge_angle_game/game/game_session.dart';
 import 'package:hinge_angle_game/game/scoring.dart';
@@ -177,44 +177,23 @@ void main() {
     session.dispose();
   });
 
-  testWidgets('ヒンジが取れなくなったら古い角度を消す', (tester) async {
-    const channel = MethodChannel('test/hinge');
-    final provider = HingeAngleProvider(channel: channel);
-    Future<void> send(Map<String, Object?> args) async {
-      await tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-        channel.name,
-        channel.codec.encodeMethodCall(MethodCall('onHinge', args)),
-        (_) {},
-      );
-    }
-
+  test('ヒンジの角度を平ら=0° に変換し、取れなくなったら古い角度を消す', () {
+    final provider = HingeAngleProvider();
     DiagnosticsLog.instance.clear();
-    await send({
-      'available': true,
-      'angleDeg': 90.0,
-      'angleRad': 1.5708,
-      'status': 'partiallyOpen',
-    });
-    expect(provider.latestAngle, 90);
+    provider.onUpdate((angleRadians: math.pi / 2, status: .partiallyOpen));
+    expect(provider.latestAngle, closeTo(90, 1e-9));
     // ゲームの角度は平ら=0°（ヒンジの生の角度を反転）
-    await send({
-      'available': true,
-      'angleDeg': 170.0,
-      'angleRad': 2.9671,
-      'status': 'partiallyOpen',
-    });
+    provider.onUpdate((
+      angleRadians: 170 * math.pi / 180,
+      status: .partiallyOpen,
+    ));
     expect(provider.latestAngle, closeTo(10, 1e-9));
     expect(provider.onOuterDisplay.value, isFalse);
     // closed = 外側の画面に移った
-    await send({
-      'available': true,
-      'angleDeg': 80.0,
-      'angleRad': 1.3963,
-      'status': 'closed',
-    });
+    provider.onUpdate((angleRadians: 80 * math.pi / 180, status: .closed));
     expect(provider.latestAngle, closeTo(100, 1e-9));
     expect(provider.onOuterDisplay.value, isTrue);
-    await send({'available': false, 'status': 'unavailable'});
+    provider.onUpdate(null);
     expect(provider.latestAngle, isNull);
     // 診断ログに生の値が残る
     final log = DiagnosticsLog.instance.export();
