@@ -9,9 +9,9 @@ Pod::Spec.new do |s|
   s.description      = <<-DESC
 Asks iOS to show the App Store review prompt (StoreKit 2).
                        DESC
-  s.homepage         = 'http://example.com'
-  s.license          = { :file => '../LICENSE' }
-  s.author           = { 'Your Company' => 'email@example.com' }
+  s.homepage         = 'https://github.com/Umigishi-Aoi/angle-sense'
+  s.license          = { :type => 'MIT', :file => '../../../LICENSE' }
+  s.author           = 'Umigishi-Aoi'
   s.source           = { :path => '.' }
   s.source_files = 'store_review/Sources/store_review/**/*'
   s.dependency 'Flutter'
