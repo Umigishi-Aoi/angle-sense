@@ -1,7 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hinge_angle_game/game/scoring.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/widgets/deviation_chart.dart';
 import 'package:material_ui/material_ui.dart';
+
+/// 読み上げの文言は日本語（元の文言）で確かめる。
+final AppLocalizations _ja = lookupAppLocalizations(const Locale('ja'));
 
 void main() {
   test('ズレは 実際−お題 の符号つき（+ = 折りすぎ）', () {
@@ -35,6 +39,9 @@ void main() {
     ];
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: Row(
             children: [
@@ -56,6 +63,7 @@ void main() {
   test('行の読み上げは名前・符号つきのズレと向き・判定', () {
     expect(
       DeviationChart.semanticsLabel(
+        _ja,
         'P1',
         const RoundResult(target: 40, actual: 44),
       ),
@@ -63,6 +71,7 @@ void main() {
     );
     expect(
       DeviationChart.semanticsLabel(
+        _ja,
         'P2',
         const RoundResult(target: 40, actual: 28),
       ),
@@ -70,6 +79,7 @@ void main() {
     );
     expect(
       DeviationChart.semanticsLabel(
+        _ja,
         'P3',
         const RoundResult(target: 40, actual: 40),
       ),
@@ -77,6 +87,7 @@ void main() {
     );
     expect(
       DeviationChart.semanticsLabel(
+        _ja,
         'P4',
         const RoundResult(target: 40, actual: null),
       ),
@@ -88,6 +99,9 @@ void main() {
     final handle = tester.ensureSemantics();
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Scaffold(
           body: DeviationChart(
             rows: [('P1', RoundResult(target: 40, actual: 44))],
@@ -105,6 +119,9 @@ void main() {
     Future<double> rowHeight(double scale) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           builder: (context, child) => MediaQuery(
             data: MediaQuery.of(
               context,

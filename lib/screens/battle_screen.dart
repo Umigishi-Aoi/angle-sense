@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../game/scoring.dart';
+import '../l10n/l10n.dart';
 import '../services/angle_provider.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
@@ -26,8 +27,12 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final countStyle = theme.textTheme.displaySmall?.copyWith(
+      color: theme.colorScheme.primary,
+    );
+    final l10n = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('バトル')),
+      appBar: AppBar(title: Text(l10n.battleTitle)),
       body: InnerDisplayGuard(
         angleProvider: widget.angleProvider,
         child: SafeArea(
@@ -37,11 +42,11 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text(
-                    '1人1回ずつ、順番に角度を合わせます',
-                    style: TextStyle(fontSize: 18),
+                  Text(
+                    l10n.battleSetupLead,
+                    style: const TextStyle(fontSize: 18),
                   ),
-                  const Text('お題は1人ずつちがいます。誤差の小さい人が勝ち'),
+                  Text(l10n.battleSetupRule),
                   const SizedBox(height: 24),
                   Row(
                     mainAxisSize: MainAxisSize.min,
@@ -52,24 +57,40 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
                             : null,
                         // 記号だけでは読み上げで意味が伝わらないので、ボタンの説明を付ける。
                         child: Semantics(
-                          label: '1人減らす',
+                          label: l10n.removePlayer,
                           excludeSemantics: true,
                           child: const Text('－'),
                         ),
                       ),
                       SizedBox(
                         width: 140,
-                        // 文字を大きくする設定で幅に入らないときは、折り返さずに縮める。
-                        child: Center(
+                        // 日本語は「2 人」を 1 行で。英語は「2 players」を 1 行にすると
+                        // ボタンの間で窮屈になるので、数字を大きく・単位を小さく下に添える。
+                        // 読み上げはどちらも「2 人」「2 players」の 1 つにまとめる。
+                        child: Semantics(
+                          label: l10n.playerCount(_players),
+                          excludeSemantics: true,
+                          // 文字を大きくする設定で幅に入らないときは、折り返さずに縮める。
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            child: Text(
-                              '$_players 人',
-                              textAlign: TextAlign.center,
-                              style: theme.textTheme.displaySmall?.copyWith(
-                                color: theme.colorScheme.primary,
-                              ),
-                            ),
+                            child: _stackPlayerUnit(context)
+                                ? Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text('$_players', style: countStyle),
+                                      Text(
+                                        l10n.playerUnit(_players),
+                                        style: theme.textTheme.bodyMedium
+                                            ?.copyWith(
+                                              color: theme.colorScheme.primary,
+                                            ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    l10n.playerCount(_players),
+                                    style: countStyle,
+                                  ),
                           ),
                         ),
                       ),
@@ -78,7 +99,7 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
                             ? () => setState(() => _players++)
                             : null,
                         child: Semantics(
-                          label: '1人増やす',
+                          label: l10n.addPlayer,
                           excludeSemantics: true,
                           child: const Text('＋'),
                         ),
@@ -95,7 +116,7 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
                         ),
                       ),
                     ),
-                    child: const Text('はじめる'),
+                    child: Text(l10n.battleStart),
                   ),
                 ],
               ),
@@ -159,7 +180,7 @@ class _BattleScreenState() extends State<BattleScreen> {
 
   int get _current => _entries.length; // 0 始まり
   bool get _done => _entries.length >= widget.playerCount;
-  String _name(int i) => 'プレイヤー${i + 1}';
+  String _name(int i) => context.l10n.playerName(i + 1);
 
   Future<void> _startTurn() async {
     if (_playing) return; // 連打で2つ積まれるのを防ぐ
@@ -172,7 +193,9 @@ class _BattleScreenState() extends State<BattleScreen> {
         .take(BattleScreen.maxNameLength)
         .toString();
     final name = typed.isEmpty ? _name(index) : typed;
-    final chartLabel = typed.isEmpty ? 'P${index + 1}' : typed;
+    final chartLabel = typed.isEmpty
+        ? context.l10n.playerShort(index + 1)
+        : typed;
     FocusScope.of(context).unfocus();
     _nameController.clear();
     await Navigator.of(context).push(
@@ -208,16 +231,16 @@ class _BattleScreenState() extends State<BattleScreen> {
     final quit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('バトルをやめますか？'),
-        content: const Text('ここまでの結果は消えます。'),
+        title: Text(context.l10n.battleQuitTitle),
+        content: Text(context.l10n.battleQuitBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('続ける'),
+            child: Text(context.l10n.keepPlaying),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('やめる'),
+            child: Text(context.l10n.quit),
           ),
         ],
       ),
@@ -234,9 +257,9 @@ class _BattleScreenState() extends State<BattleScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('バトル'),
+          title: Text(context.l10n.battleTitle),
           leading: IconButton(
-            tooltip: 'やめる',
+            tooltip: context.l10n.quit,
             icon: const Icon(Icons.close),
             onPressed: _confirmQuit,
           ),
@@ -251,6 +274,7 @@ class _BattleScreenState() extends State<BattleScreen> {
 
   Widget _turn(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final last = _entries.isEmpty ? null : _entries.last;
     return Center(
       child: SingleChildScrollView(
@@ -270,11 +294,11 @@ class _BattleScreenState() extends State<BattleScreen> {
               const SizedBox(height: 16),
             ],
             Text(
-              '${_current + 1} / ${widget.playerCount} 人目',
+              l10n.turnProgress(_current + 1, widget.playerCount),
               style: theme.textTheme.bodyMedium,
             ),
             Text(
-              '${_name(_current)} の番',
+              l10n.turnOf(_name(_current)),
               style: theme.textTheme.displaySmall?.copyWith(
                 color: theme.colorScheme.primary,
               ),
@@ -289,7 +313,7 @@ class _BattleScreenState() extends State<BattleScreen> {
                 textAlign: TextAlign.center,
                 textInputAction: TextInputAction.done,
                 decoration: InputDecoration(
-                  hintText: '名前（入れなくてもOK）',
+                  hintText: l10n.nameHint,
                   counterText: '',
                   isDense: true,
                   enabledBorder: UnderlineInputBorder(
@@ -299,9 +323,9 @@ class _BattleScreenState() extends State<BattleScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            const Text('本体を受け取ったら、スタートを押してね'),
+            Text(l10n.handOverHint),
             const SizedBox(height: 24),
-            FilledButton(onPressed: _startTurn, child: const Text('スタート')),
+            FilledButton(onPressed: _startTurn, child: Text(l10n.turnStart)),
           ],
         ),
       ),
@@ -310,12 +334,13 @@ class _BattleScreenState() extends State<BattleScreen> {
 
   Widget _ranking(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final ranked = rankEntries(_entries);
     return Column(
       children: [
         const SizedBox(height: 8),
         Text(
-          '結果発表',
+          l10n.battleResultsHeading,
           style: theme.textTheme.headlineMedium?.copyWith(
             color: theme.colorScheme.primary,
           ),
@@ -338,7 +363,7 @@ class _BattleScreenState() extends State<BattleScreen> {
                             SizedBox(
                               width: 52,
                               child: Text(
-                                '$rank位',
+                                l10n.place(rank),
                                 style: TextStyle(
                                   fontSize: 22,
                                   color: rank == 1
@@ -358,7 +383,7 @@ class _BattleScreenState() extends State<BattleScreen> {
                                     style: const TextStyle(fontSize: 18),
                                   ),
                                   Text(
-                                    _resultLine(e.result),
+                                    _resultLine(l10n, e.result),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -385,7 +410,7 @@ class _BattleScreenState() extends State<BattleScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'みんなの感覚のズレ',
+                        l10n.everyoneSenseGap,
                         style: TextStyle(
                           fontSize: 18,
                           color: theme.colorScheme.secondary,
@@ -418,12 +443,12 @@ class _BattleScreenState() extends State<BattleScreen> {
                     ),
                   ),
                 ),
-                child: const Text('もう一度'),
+                child: Text(l10n.playAgain),
               ),
               const SizedBox(width: 16),
               OutlinedButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('ホームへ'),
+                child: Text(l10n.toHome),
               ),
             ],
           ),
@@ -434,9 +459,13 @@ class _BattleScreenState() extends State<BattleScreen> {
 }
 
 /// 「45°→41°  誤差4.0°」。計測できなかったときは「45°→計測なし」。
-String _resultLine(RoundResult r) {
-  final target = '${r.target.round()}°';
-  if (!r.measured) return '$target→計測なし';
+String _resultLine(AppLocalizations l10n, RoundResult r) {
+  final target = r.target.round();
+  if (!r.measured) return l10n.resultLineNoReading(target);
   final error = r.error!.toStringAsFixed(1);
-  return '$target→${r.actual!.round()}°  誤差$error°';
+  return l10n.battleResultLine(target, r.actual!.round(), error);
 }
+
+/// 人数の単位を数字の下に分けて出すか（日本語は「2 人」の 1 行のまま）。
+bool _stackPlayerUnit(BuildContext context) =>
+    Localizations.localeOf(context).languageCode != 'ja';

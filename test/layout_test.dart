@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/screens/battle_screen.dart';
 import 'package:hinge_angle_game/screens/home_screen.dart';
 import 'package:hinge_angle_game/screens/result_screen.dart';
@@ -32,6 +33,9 @@ void main() {
           feedback: RecordingFeedback(settings),
           bestScores: inMemoryBestScores(),
           child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             home: HomeScreen(
               angleProvider: provider,
             ),
@@ -65,6 +69,9 @@ void main() {
           feedback: RecordingFeedback(settings),
           bestScores: inMemoryBestScores(),
           child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             home: BattleScreen(
               angleProvider: FakeAngleProvider()..latestAngle = 40,
               playerCount: 2,
@@ -108,6 +115,9 @@ void main() {
           feedback: RecordingFeedback(settings),
           bestScores: inMemoryBestScores(),
           child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             home: BattleSetupScreen(
               angleProvider: FakeAngleProvider()..latestAngle = 40,
             ),
@@ -118,7 +128,7 @@ void main() {
         await tester.tap(find.text('＋'));
         await tester.pump();
       }
-      expect(find.text('10 人'), findsOneWidget);
+      expect(find.bySemanticsLabel('10 人'), findsOneWidget);
       await tester.tap(find.text('はじめる'));
       await tester.pumpAndSettle();
       for (var i = 1; i <= 10; i++) {

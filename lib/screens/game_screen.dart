@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../game/game_session.dart';
 import '../game/scoring.dart';
+import '../l10n/l10n.dart';
 import '../services/angle_provider.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
@@ -87,20 +88,20 @@ class _GameScreenState() extends State<GameScreen> {
     final quit = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ゲームをやめますか？'),
+        title: Text(context.l10n.gameQuitTitle),
         content: Text(
           _vm.isBattle
-              ? 'やめると、この人の番はここで終わりです（計測前なら「計測なし」）。'
-              : 'ここまでの結果は保存されません。',
+              ? context.l10n.gameQuitBattleBody
+              : context.l10n.gameQuitSoloBody,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('続ける'),
+            child: Text(context.l10n.keepPlaying),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('やめる'),
+            child: Text(context.l10n.quit),
           ),
         ],
       ),
@@ -155,7 +156,7 @@ class _GameScreenState() extends State<GameScreen> {
                         child: Row(
                           children: [
                             IconButton(
-                              tooltip: 'やめる',
+                              tooltip: context.l10n.quit,
                               icon: Icon(Icons.close, color: fg),
                               onPressed: _confirmQuit,
                             ),
@@ -164,7 +165,10 @@ class _GameScreenState() extends State<GameScreen> {
                                   ? const SizedBox.shrink()
                                   : Text(
                                       widget.title ??
-                                          '第 ${_vm.roundIndex + 1} / ${widget.rounds} 問',
+                                          context.l10n.gameRound(
+                                            _vm.roundIndex + 1,
+                                            widget.rounds,
+                                          ),
                                       textAlign: TextAlign.center,
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
@@ -209,6 +213,7 @@ class _GameScreenState() extends State<GameScreen> {
 
   Widget _pausedOverlay(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     return Positioned.fill(
       child: ColoredBox(
         color: theme.colorScheme.surface,
@@ -216,15 +221,15 @@ class _GameScreenState() extends State<GameScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('一時停止中', style: theme.textTheme.headlineMedium),
+              Text(l10n.pausedTitle, style: theme.textTheme.headlineMedium),
               const SizedBox(height: 8),
               if (_vm.phase == GamePhase.showTarget ||
                   _vm.phase == GamePhase.blind)
-                const Text('再開すると、この問題をお題からやり直します'),
+                Text(l10n.pausedRestartNote),
               const SizedBox(height: 24),
-              FilledButton(onPressed: _vm.resume, child: const Text('再開')),
+              FilledButton(onPressed: _vm.resume, child: Text(l10n.resume)),
               const SizedBox(height: 8),
-              TextButton(onPressed: _confirmQuit, child: const Text('やめる')),
+              TextButton(onPressed: _confirmQuit, child: Text(l10n.quit)),
             ],
           ),
         ),
@@ -235,6 +240,7 @@ class _GameScreenState() extends State<GameScreen> {
   Widget _buildPhase(BuildContext context) {
     final theme = Theme.of(context);
     final retro = context.retroColors;
+    final l10n = context.l10n;
     switch (_vm.phase) {
       case GamePhase.showTarget:
         // お題の数字と、その角度の見本の絵を並べる（数字だけでは何度か想像しにくいため）。
@@ -249,7 +255,7 @@ class _GameScreenState() extends State<GameScreen> {
                   child: AnglePreview(
                     key: const ValueKey('target_preview'),
                     target: _vm.currentTarget.toDouble(),
-                    semanticsLabel: 'お題 ${_vm.currentTarget}° の見本の図',
+                    semanticsLabel: l10n.targetFigureLabel(_vm.currentTarget),
                   ),
                 ),
               ),
@@ -263,7 +269,7 @@ class _GameScreenState() extends State<GameScreen> {
                     AngleText(_vm.currentTarget, fontSize: 144),
                     const SizedBox(height: 8),
                     Text(
-                      'あと ${_vm.countdown} 秒で暗くなる',
+                      l10n.darkIn(_vm.countdown),
                       style: const TextStyle(fontSize: 20),
                     ),
                     const SizedBox(height: 12),
@@ -290,7 +296,7 @@ class _GameScreenState() extends State<GameScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Semantics(
-                label: 'お題 ${_vm.currentTarget}°',
+                label: l10n.blindTargetLabel(_vm.currentTarget),
                 excludeSemantics: true,
                 child: Text(
                   '${_vm.currentTarget}°',
@@ -370,12 +376,14 @@ class _GameScreenState() extends State<GameScreen> {
                   children: [
                     _legend(
                       theme.colorScheme.primary,
-                      '目標 ${r.target.round()}°',
+                      l10n.legendTarget(r.target.round()),
                     ),
                     const SizedBox(width: 24),
                     _legend(
                       theme.colorScheme.secondary,
-                      r.measured ? 'あなた ${r.actual!.round()}°' : 'あなた 計測なし',
+                      r.measured
+                          ? l10n.legendYou(r.actual!.round())
+                          : l10n.legendYouNoReading,
                     ),
                   ],
                 ),
@@ -405,16 +413,19 @@ class _GameScreenState() extends State<GameScreen> {
                       ),
                     Text(
                       r.measured
-                          ? '誤差 ${r.error!.toStringAsFixed(1)}°  +${r.points}点'
-                          : '角度を取得できませんでした  +0点',
+                          ? l10n.revealScore(
+                              r.error!.toStringAsFixed(1),
+                              r.points,
+                            )
+                          : l10n.revealNoReading,
                     ),
                     const SizedBox(height: 16),
                     FilledButton(
                       onPressed: _vm.revealDone ? _vm.next : null,
                       child: Text(
                         _vm.isLastRound
-                            ? (_vm.isBattle ? '次へ' : '結果へ')
-                            : '次の問題',
+                            ? (_vm.isBattle ? l10n.next : l10n.toResults)
+                            : l10n.nextRound,
                       ),
                     ),
                   ],
@@ -453,7 +464,7 @@ class const CountdownBar({
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: '残り $remaining 秒',
+      label: context.l10n.secondsLeft(remaining),
       child: _boxes(),
     );
   }

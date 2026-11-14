@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hinge_angle_game/game/scoring.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/screens/battle_screen.dart';
 import 'package:hinge_angle_game/screens/game_screen.dart';
 import 'package:hinge_angle_game/screens/home_screen.dart';
@@ -39,6 +40,9 @@ Widget _app(Widget home, {double scale = 1}) {
     feedback: RecordingFeedback(settings),
     bestScores: inMemoryBestScores(),
     child: MaterialApp(
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+
       theme: Retro.theme(),
       builder: (context, child) => MediaQuery(
         data: MediaQuery.of(
@@ -110,22 +114,31 @@ Future<void> _pumpBattle(WidgetTester tester, double scale) async {
 
 /// バトルの順番の画面から 2 人分を遊んで、結果発表まで進める。
 /// [check] は各段階で呼ぶ（はみ出しの確認など）。
+/// [l10n] は表示の言語（省略時は日本語）。
 Future<void> _playBattle(
   WidgetTester tester,
-  void Function(String step) check,
-) async {
+  void Function(String step) check, {
+  AppLocalizations? l10n,
+}) async {
+  final start = l10n?.turnStart ?? 'スタート';
   for (var i = 0; i < 2; i++) {
-    await tester.ensureVisible(find.text('スタート'));
-    await tester.tap(find.text('スタート'));
+    await tester.ensureVisible(find.text(start));
+    await tester.tap(find.text(start));
     await tester.pumpAndSettle();
     await tester.pump(const Duration(seconds: 3));
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     check('${i + 1}人目の答え合わせ');
-    await tester.tap(find.text('次へ'));
+    await tester.tap(find.text(l10n?.next ?? '次へ'));
     await tester.pumpAndSettle();
   }
-  expect(find.text('結果発表'), findsOneWidget);
+  expect(find.text(l10n?.battleResultsHeading ?? '結果発表'), findsOneWidget);
+}
+
+/// 端末の言語を英語にする（このテストの間だけ）。
+void _useEnglish(WidgetTester tester) {
+  tester.platformDispatcher.localesTestValue = const [Locale('en')];
+  addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 }
 
 /// 遊んでいる途中の画面を片づける（タイマーを残さない）。
@@ -188,6 +201,105 @@ void main() {
       });
     });
   }
+
+  // 英語は日本語より文字数が多いので、同じ大きさの画面に収まるかを等倍と 2 倍で確かめる。
+  group('英語でもはみ出さない', () {
+    final en = lookupAppLocalizations(const Locale('en'));
+    for (final screen in _screens) {
+      for (final scale in const [1.0, 2.0]) {
+        group('${screen.$1}・文字 $scale 倍', () {
+          void noOverflow(WidgetTester tester, String step) =>
+              expect(tester.takeException(), isNull, reason: step);
+
+          testWidgets('ホーム・あそびかた・設定', (tester) async {
+            _setScreen(tester, screen);
+            _useEnglish(tester);
+            await _pumpHome(tester, scale);
+            noOverflow(tester, 'ホーム');
+            expect(find.text('Angle Sense'), findsOneWidget);
+            expect(find.text('Solo (5 rounds)'), findsOneWidget);
+            expect(find.text('Battle (2–10 players)'), findsOneWidget);
+            expect(find.text('Best: --'), findsOneWidget);
+            await tester.ensureVisible(find.text('How to play'));
+            await tester.tap(find.text('How to play'));
+            await tester.pumpAndSettle();
+            noOverflow(tester, 'あそびかた');
+            expect(find.text(en.howToTilt), findsOneWidget);
+            await tester.tap(find.text('OK'));
+            await tester.pumpAndSettle();
+            await tester.tap(find.byTooltip('Settings'));
+            await tester.pumpAndSettle();
+            noOverflow(tester, '設定');
+            expect(find.text('Sound effects'), findsOneWidget);
+          });
+
+          testWidgets('外側の画面の案内', (tester) async {
+            _setScreen(tester, screen);
+            _useEnglish(tester);
+            final provider = _provider()..onOuterDisplay.value = true;
+            await tester.pumpWidget(
+              _app(HomeScreen(angleProvider: provider), scale: scale),
+            );
+            await tester.pumpAndSettle();
+            noOverflow(tester, '外側の画面');
+            expect(find.text('Open it up'), findsOneWidget);
+          });
+
+          testWidgets('ゲーム（お題→暗転→答え合わせ）', (tester) async {
+            _setScreen(tester, screen);
+            _useEnglish(tester);
+            await _pumpGame(tester, scale);
+            noOverflow(tester, 'お題');
+            expect(find.text('Round 1 of 5'), findsOneWidget);
+            expect(find.text('Going dark in 3 seconds'), findsOneWidget);
+            await tester.pump(const Duration(seconds: 3));
+            await tester.pump(const Duration(milliseconds: 300));
+            noOverflow(tester, '暗転');
+            await tester.pump(const Duration(seconds: 5));
+            await tester.pumpAndSettle();
+            noOverflow(tester, '答え合わせ');
+            expect(find.text('Next round'), findsOneWidget);
+            await _dispose(tester);
+          });
+
+          testWidgets('結果', (tester) async {
+            _setScreen(tester, screen);
+            _useEnglish(tester);
+            await _pumpResult(tester, scale);
+            noOverflow(tester, '結果');
+            expect(find.text('210 / 500 pts'), findsOneWidget);
+            expect(find.text('Best: 300 pts'), findsOneWidget);
+          });
+
+          testWidgets('バトル設定', (tester) async {
+            _setScreen(tester, screen);
+            _useEnglish(tester);
+            await _pumpBattleSetup(tester, scale);
+            noOverflow(tester, 'バトル設定');
+            expect(find.bySemanticsLabel('2 players'), findsOneWidget);
+            // 英語は数字と単位を分けて出す
+            expect(find.text('2'), findsOneWidget);
+            expect(find.text('players'), findsOneWidget);
+          });
+
+          testWidgets('バトルの順番→結果発表', (tester) async {
+            _setScreen(tester, screen);
+            _useEnglish(tester);
+            await _pumpBattle(tester, scale);
+            noOverflow(tester, '順番');
+            expect(find.text("Player 1's turn"), findsOneWidget);
+            await _playBattle(
+              tester,
+              (step) => noOverflow(tester, step),
+              l10n: en,
+            );
+            noOverflow(tester, '結果発表');
+            expect(find.text('#1'), findsWidgets);
+          });
+        });
+      }
+    }
+  });
 
   group('アクセシビリティの指針（タップ領域・ラベル・文字のコントラスト）', () {
     Future<void> meetsAll(WidgetTester tester) async {

@@ -1,5 +1,6 @@
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../services/angle_provider.dart';
 
 /// iPhone Duo で外側の画面に移ったときに「開いて内側を見てね」と出す。
@@ -34,22 +35,23 @@ class const _OuterNotice() extends StatelessWidget {
       color: theme.colorScheme.surface,
       child: SafeArea(
         child: Center(
-          child: Padding(
+          // 英語の説明は日本語より行が増えるので、文字を大きくする設定で収まらないときだけスクロールする。
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'ひらいてね',
+                  context.l10n.openPrompt,
                   style: theme.textTheme.displaySmall?.copyWith(
                     color: theme.colorScheme.primary,
                   ),
                 ),
                 const SizedBox(height: 16),
-                const Text(
-                  'このゲームは内側の画面で遊びます。\n直角より大きく開くと内側の画面に戻ります。',
+                Text(
+                  context.l10n.openPromptBody,
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18),
+                  style: const TextStyle(fontSize: 18),
                 ),
               ],
             ),

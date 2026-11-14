@@ -9,6 +9,7 @@ import 'package:store_review/store_review.dart';
 import 'app/orientation_controller.dart';
 import 'app/route_observer.dart';
 import 'app/sensor_lifecycle.dart';
+import 'l10n/l10n.dart';
 import 'repositories/best_score_repository.dart';
 import 'screens/home_screen.dart';
 import 'services/angle_provider.dart';
@@ -64,8 +65,12 @@ class const PitattoAngleApp({
 
   Widget _app() {
     return MaterialApp(
-      title: 'ピタッとアングル',
+      onGenerateTitle: (context) => context.l10n.appTitle,
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: appLocalizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      // 日本語の端末は日本語、それ以外の言語の端末は英語。
+      localeListResolutionCallback: resolveAppLocale,
       // 端末のライト/ダーク設定に関係なく、常にレトロ配色。
       theme: Retro.theme(),
       navigatorObservers: [routeObserver],

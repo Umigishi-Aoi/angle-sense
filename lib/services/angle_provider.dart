@@ -11,7 +11,7 @@ abstract class AngleProvider() {
   /// 保存キーなどに使う入力源の識別子（例: hinge / tilt）。
   String get id;
 
-  /// 画面表示用の入力源名。
+  /// 入力源名（日本語）。診断画面で使う。ホームは [id] から言語に合わせた名前を出す。
   String get label;
 
   /// 最新の角度（まだ値が来ていなければ null）。

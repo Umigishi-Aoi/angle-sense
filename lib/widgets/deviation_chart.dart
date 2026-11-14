@@ -1,6 +1,7 @@
 import 'package:material_ui/material_ui.dart';
 
 import '../game/scoring.dart';
+import '../l10n/l10n.dart';
 import '../ui/retro_theme.dart';
 import 'angle_reveal.dart';
 
@@ -14,6 +15,10 @@ class const DeviationChart({
 
   /// (表示名, 結果) を上から順に並べる。
   required final List<(String, RoundResult)> rows,
+
+  /// 読み上げ用の名前（[rows] と同じ順）。表示名が略語（英語の R1 など）のときに渡す。
+  /// null なら表示名をそのまま読む。
+  final List<String>? spokenNames,
   final double range = 30,
 }) extends StatelessWidget {
   /// 符号つきのズレ。+ = 折りすぎ、− = 足りない。計測なしは null。
@@ -22,18 +27,26 @@ class const DeviationChart({
 
   /// 1 行の読み上げ。点の位置と色（判定）は見えないので、言葉にする。
   /// 例: 「P1、+4.0° 折りすぎ、GREAT」「P2、計測なし、MISS」
-  static String semanticsLabel(String name, RoundResult r) {
+  static String semanticsLabel(
+    AppLocalizations l10n,
+    String name,
+    RoundResult r,
+  ) {
     final err = signedError(r);
-    if (err == null) return '$name、計測なし、${r.judgement.label}';
+    final judgement = r.judgement.label;
+    if (err == null) return l10n.chartRowNoReading(name, judgement);
     final signed = AngleZoom.signedLabel(r.target, r.actual!);
-    final side = signed.startsWith('±') ? 'ピタッ' : (err > 0 ? '折りすぎ' : '足りない');
-    return '$name、$signed $side、${r.judgement.label}';
+    final side = signed.startsWith('±')
+        ? l10n.sideSpotOn
+        : (err > 0 ? l10n.sideOver : l10n.sideUnder);
+    return l10n.chartRowLabel(name, signed, side, judgement);
   }
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final retro = context.retroColors;
+    final l10n = context.l10n;
     // 文字を大きくする設定では、行の高さも同じ割合で広げる（名前が上下で切れないように）。
     final rowHeight = MediaQuery.textScalerOf(
       context,
@@ -52,9 +65,12 @@ class const DeviationChart({
                 child: Wrap(
                   alignment: WrapAlignment.spaceBetween,
                   children: [
-                    Text('← 足りない', style: TextStyle(color: retro.dim)),
-                    Text('ピタッ', style: TextStyle(color: scheme.primary)),
-                    Text('折りすぎ →', style: TextStyle(color: retro.dim)),
+                    Text(l10n.chartUnder, style: TextStyle(color: retro.dim)),
+                    Text(
+                      l10n.chartSpotOn,
+                      style: TextStyle(color: scheme.primary),
+                    ),
+                    Text(l10n.chartOver, style: TextStyle(color: retro.dim)),
                   ],
                 ),
               ),
@@ -62,12 +78,12 @@ class const DeviationChart({
           ),
         ),
         const SizedBox(height: 4),
-        for (final (name, result) in rows)
+        for (final (i, (name, result)) in rows.indexed)
           Semantics(
             container: true,
-            label: semanticsLabel(name, result),
+            label: semanticsLabel(l10n, spokenNames?[i] ?? name, result),
             excludeSemantics: true,
-            child: _row(name, result, rowHeight, scheme, retro),
+            child: _row(l10n, name, result, rowHeight, scheme, retro),
           ),
         const SizedBox(height: 4),
         ExcludeSemantics(
@@ -101,6 +117,7 @@ class const DeviationChart({
   static const _dot = 14.0;
 
   Widget _row(
+    AppLocalizations l10n,
     String name,
     RoundResult result,
     double rowHeight,
@@ -148,7 +165,7 @@ class const DeviationChart({
                   children.add(
                     Center(
                       child: Text(
-                        '計測なし',
+                        l10n.noReading,
                         style: TextStyle(color: scheme.error, fontSize: 14),
                       ),
                     ),

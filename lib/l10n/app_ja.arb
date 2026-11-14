@@ -1,0 +1,564 @@
+{
+  "@@locale": "ja",
+  "appTitle": "ピタッとアングル",
+  "@appTitle": {
+    "description": "アプリ名（タイトル・ライセンス画面）"
+  },
+  "quit": "やめる",
+  "@quit": {
+    "description": "「やめる」ボタン・ツールチップ"
+  },
+  "keepPlaying": "続ける",
+  "@keepPlaying": {
+    "description": "中断確認で続けるボタン"
+  },
+  "playAgain": "もう一度",
+  "@playAgain": {
+    "description": "もう一度遊ぶボタン"
+  },
+  "noReading": "計測なし",
+  "@noReading": {
+    "description": "角度が取れなかったときの表示"
+  },
+  "resultLineNoReading": "{target}°→計測なし",
+  "@resultLineNoReading": {
+    "description": "結果の行（計測なし）。target=お題の角度",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "homeTagline": "目標の角度を覚えて、暗闇の中で合わせよう",
+  "@homeTagline": {
+    "description": "ホームの説明（1行目）"
+  },
+  "homeAngleScale": "平らが 0°・直角が 90°",
+  "@homeAngleScale": {
+    "description": "ホームの角度の基準"
+  },
+  "homeInput": "入力: {source}",
+  "@homeInput": {
+    "description": "入力源の表示。source=入力源の名前",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "inputHinge": "ヒンジ（iPhone Duo）",
+  "@inputHinge": {
+    "description": "入力源の名前（ヒンジ）"
+  },
+  "inputTilt": "端末の傾き（加速度センサー）",
+  "@inputTilt": {
+    "description": "入力源の名前（傾き）"
+  },
+  "homeAngleUnknown": "角度: --",
+  "@homeAngleUnknown": {
+    "description": "角度がまだ取れていないとき"
+  },
+  "homeCurrentAngle": "今の角度",
+  "@homeCurrentAngle": {
+    "description": "今の角度の読み上げラベル"
+  },
+  "homeBestNone": "自己ベスト: --",
+  "@homeBestNone": {
+    "description": "自己ベストなし"
+  },
+  "homeBest": "{score, plural, other{自己ベスト: {score} 点}}",
+  "@homeBest": {
+    "description": "自己ベスト。score=点数",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "homeSolo": "{rounds, plural, other{ひとりで（{rounds}問）}}",
+  "@homeSolo": {
+    "description": "ひとりで遊ぶボタン。rounds=問題数",
+    "placeholders": {
+      "rounds": {
+        "type": "int"
+      }
+    }
+  },
+  "homeBattle": "バトル（{min}〜{max}人）",
+  "@homeBattle": {
+    "description": "バトルボタン。min/max=人数",
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "homeHowTo": "あそびかた・持ち方",
+  "@homeHowTo": {
+    "description": "あそびかたボタン"
+  },
+  "homeWaitingSensor": "角度を取得しています…（センサーのない端末では遊べません）",
+  "@homeWaitingSensor": {
+    "description": "角度の取得待ち"
+  },
+  "settingsTooltip": "設定",
+  "@settingsTooltip": {
+    "description": "設定ボタンのツールチップ"
+  },
+  "howToTitle": "あそびかた",
+  "@howToTitle": {
+    "description": "あそびかたダイアログの見出し"
+  },
+  "howToHinge": "1. 内側の画面を見ながら、本を読むように両手で持つ\n   （机に置いてノートパソコンのように開いてもOK）\n\n2. 平らに開いた状態が 0°。折るほど大きくなり、直角が 90°\n\n3. お題の角度を覚えたら、画面が暗くなる。5秒のうちに合わせて、そのまま止めておく\n\n・お題は 10〜80°。直角より閉じると外側の画面に切り替わるので、そこまでは閉じない\n・0° に近い角度はバネで開ききるので、指で支えて止める",
+  "@howToHinge": {
+    "description": "あそびかた（折りたたみ iPhone）"
+  },
+  "howToTilt": "1. 本体を横向きにして、両手で持つ\n\n2. 画面を上にして平らに置いた状態が 0°。起こすほど大きくなり、まっすぐ立てると 90°\n\n3. お題の角度を覚えたら、画面が暗くなる。5秒のうちに合わせて、そのまま止めておく\n\n・お題は 10〜80°\n・折りたたみ iPhone では、本体を折る角度で遊べます",
+  "@howToTilt": {
+    "description": "あそびかた（普通の iPhone / iPad）"
+  },
+  "ok": "OK",
+  "@ok": {
+    "description": "ダイアログを閉じるボタン"
+  },
+  "settingsSound": "効果音",
+  "@settingsSound": {
+    "description": "設定: 効果音"
+  },
+  "settingsSoundNote": "マナーモード中は鳴りません",
+  "@settingsSoundNote": {
+    "description": "設定: 効果音の補足"
+  },
+  "settingsTick": "暗転中のカウント音",
+  "@settingsTick": {
+    "description": "設定: 暗転中のカウント音"
+  },
+  "settingsTickNote": "1秒ごとの小さな音。リズムで時間が分かります",
+  "@settingsTickNote": {
+    "description": "設定: カウント音の補足"
+  },
+  "settingsHaptics": "振動",
+  "@settingsHaptics": {
+    "description": "設定: 振動"
+  },
+  "settingsHapticsNote": "iPhoneの「触覚」設定によってはマナーモード中に鳴りません",
+  "@settingsHapticsNote": {
+    "description": "設定: 振動の補足"
+  },
+  "settingsDiagnostics": "診断（実機確認用）",
+  "@settingsDiagnostics": {
+    "description": "設定: 診断画面（開発版のみ表示）"
+  },
+  "settingsLicenses": "ライセンス",
+  "@settingsLicenses": {
+    "description": "設定: ライセンス"
+  },
+  "gameQuitTitle": "ゲームをやめますか？",
+  "@gameQuitTitle": {
+    "description": "ゲーム中断の確認"
+  },
+  "gameQuitBattleBody": "やめると、この人の番はここで終わりです（計測前なら「計測なし」）。",
+  "@gameQuitBattleBody": {
+    "description": "バトル中の中断の説明"
+  },
+  "gameQuitSoloBody": "ここまでの結果は保存されません。",
+  "@gameQuitSoloBody": {
+    "description": "ひとりで遊ぶときの中断の説明"
+  },
+  "gameRound": "第 {current} / {total} 問",
+  "@gameRound": {
+    "description": "何問目か。current=今の問題 / total=問題数",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "pausedTitle": "一時停止中",
+  "@pausedTitle": {
+    "description": "一時停止の見出し"
+  },
+  "pausedRestartNote": "再開すると、この問題をお題からやり直します",
+  "@pausedRestartNote": {
+    "description": "一時停止の補足"
+  },
+  "resume": "再開",
+  "@resume": {
+    "description": "再開ボタン"
+  },
+  "targetFigureLabel": "お題 {angle}° の見本の図",
+  "@targetFigureLabel": {
+    "description": "お題の見本の図の読み上げ。angle=お題の角度",
+    "placeholders": {
+      "angle": {
+        "type": "int"
+      }
+    }
+  },
+  "darkIn": "{seconds, plural, other{あと {seconds} 秒で暗くなる}}",
+  "@darkIn": {
+    "description": "お題表示中の残り秒数",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "blindTargetLabel": "お題 {angle}°",
+  "@blindTargetLabel": {
+    "description": "暗転中のお題の読み上げ",
+    "placeholders": {
+      "angle": {
+        "type": "int"
+      }
+    }
+  },
+  "secondsLeft": "{seconds, plural, other{残り {seconds} 秒}}",
+  "@secondsLeft": {
+    "description": "残り秒数の読み上げ",
+    "placeholders": {
+      "seconds": {
+        "type": "int"
+      }
+    }
+  },
+  "legendTarget": "目標 {angle}°",
+  "@legendTarget": {
+    "description": "答え合わせの凡例（目標）",
+    "placeholders": {
+      "angle": {
+        "type": "int"
+      }
+    }
+  },
+  "legendYou": "あなた {angle}°",
+  "@legendYou": {
+    "description": "答え合わせの凡例（あなた）",
+    "placeholders": {
+      "angle": {
+        "type": "int"
+      }
+    }
+  },
+  "legendYouNoReading": "あなた 計測なし",
+  "@legendYouNoReading": {
+    "description": "答え合わせの凡例（あなた・計測なし）"
+  },
+  "revealScore": "{points, plural, other{誤差 {error}°  +{points}点}}",
+  "@revealScore": {
+    "description": "誤差と得点。error=誤差（小数1桁の文字列）",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      },
+      "points": {
+        "type": "int"
+      }
+    }
+  },
+  "revealNoReading": "角度を取得できませんでした  +0点",
+  "@revealNoReading": {
+    "description": "角度が取れなかったとき"
+  },
+  "next": "次へ",
+  "@next": {
+    "description": "バトルの最後の問題の次へ"
+  },
+  "toResults": "結果へ",
+  "@toResults": {
+    "description": "ひとりで遊ぶ最後の問題の次へ"
+  },
+  "nextRound": "次の問題",
+  "@nextRound": {
+    "description": "次の問題へ"
+  },
+  "revealFigureLabel": "答え合わせの図。目標 {target}°、あなた {you}",
+  "@revealFigureLabel": {
+    "description": "答え合わせの図の読み上げ。you=あなたの角度（「41°」か「計測なし」）",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      },
+      "you": {
+        "type": "String"
+      }
+    }
+  },
+  "zoomHeading": "拡大",
+  "@zoomHeading": {
+    "description": "拡大図の見出し"
+  },
+  "zoomLabel": "拡大図、ズレ {signed}",
+  "@zoomLabel": {
+    "description": "拡大図の読み上げ。signed=符号つきのズレ（+4.0° など）",
+    "placeholders": {
+      "signed": {
+        "type": "String"
+      }
+    }
+  },
+  "resultTitle": "結果",
+  "@resultTitle": {
+    "description": "結果画面の見出し"
+  },
+  "rankHeading": "ランク",
+  "@rankHeading": {
+    "description": "ランクの見出し"
+  },
+  "resultScore": "{max, plural, other{{score} / {max} 点}}",
+  "@resultScore": {
+    "description": "合計点 / 満点",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "newBest": "自己ベスト更新！",
+  "@newBest": {
+    "description": "自己ベスト更新"
+  },
+  "bestScore": "{score, plural, other{自己ベスト {score} 点}}",
+  "@bestScore": {
+    "description": "自己ベスト（更新しなかったとき）",
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "home": "ホーム",
+  "@home": {
+    "description": "ホームへ戻るボタン（結果）"
+  },
+  "yourSenseGap": "あなたの感覚のズレ",
+  "@yourSenseGap": {
+    "description": "ズレ図の見出し（ひとり）"
+  },
+  "roundShort": "{n}問",
+  "@roundShort": {
+    "description": "ズレ図・結果の行の問題番号",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "roundSpoken": "{n}問",
+  "@roundSpoken": {
+    "description": "問題番号の読み上げ（VoiceOver）。英語は表示が R1 と短いので、読み上げは Round 1 にする",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "battleTitle": "バトル",
+  "@battleTitle": {
+    "description": "バトルの見出し"
+  },
+  "battleSetupLead": "1人1回ずつ、順番に角度を合わせます",
+  "@battleSetupLead": {
+    "description": "バトル設定の説明（1行目）"
+  },
+  "battleSetupRule": "お題は1人ずつちがいます。誤差の小さい人が勝ち",
+  "@battleSetupRule": {
+    "description": "バトル設定の説明（2行目）"
+  },
+  "playerUnit": "{count, plural, other{人}}",
+  "@playerUnit": {
+    "description": "人数の単位（英語のように数字の下に分けて出す言語用。日本語は playerCount の 1 行表示を使う）",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playerCount": "{count, plural, other{{count} 人}}",
+  "@playerCount": {
+    "description": "人数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "removePlayer": "1人減らす",
+  "@removePlayer": {
+    "description": "人数を減らすボタンの読み上げ"
+  },
+  "addPlayer": "1人増やす",
+  "@addPlayer": {
+    "description": "人数を増やすボタンの読み上げ"
+  },
+  "battleStart": "はじめる",
+  "@battleStart": {
+    "description": "バトル開始ボタン"
+  },
+  "battleQuitTitle": "バトルをやめますか？",
+  "@battleQuitTitle": {
+    "description": "バトル中断の確認"
+  },
+  "battleQuitBody": "ここまでの結果は消えます。",
+  "@battleQuitBody": {
+    "description": "バトル中断の説明"
+  },
+  "playerName": "プレイヤー{n}",
+  "@playerName": {
+    "description": "名前を入れなかった人の名前",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "playerShort": "P{n}",
+  "@playerShort": {
+    "description": "ズレ図の短い名前",
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "turnProgress": "{current} / {total} 人目",
+  "@turnProgress": {
+    "description": "何人目か",
+    "placeholders": {
+      "current": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "turnOf": "{name} の番",
+  "@turnOf": {
+    "description": "誰の番か",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "nameHint": "名前（入れなくてもOK）",
+  "@nameHint": {
+    "description": "名前の入力欄のヒント"
+  },
+  "handOverHint": "本体を受け取ったら、スタートを押してね",
+  "@handOverHint": {
+    "description": "本体を渡したあとの案内"
+  },
+  "turnStart": "スタート",
+  "@turnStart": {
+    "description": "自分の番を始めるボタン"
+  },
+  "battleResultsHeading": "結果発表",
+  "@battleResultsHeading": {
+    "description": "結果発表の見出し"
+  },
+  "place": "{rank}位",
+  "@place": {
+    "description": "順位",
+    "placeholders": {
+      "rank": {
+        "type": "int"
+      }
+    }
+  },
+  "everyoneSenseGap": "みんなの感覚のズレ",
+  "@everyoneSenseGap": {
+    "description": "ズレ図の見出し（バトル）"
+  },
+  "toHome": "ホームへ",
+  "@toHome": {
+    "description": "ホームへ戻るボタン（バトル）"
+  },
+  "battleResultLine": "{target}°→{actual}°  誤差{error}°",
+  "@battleResultLine": {
+    "description": "結果の行。error=誤差（小数1桁の文字列）",
+    "placeholders": {
+      "target": {
+        "type": "int"
+      },
+      "actual": {
+        "type": "int"
+      },
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "chartUnder": "← 足りない",
+  "@chartUnder": {
+    "description": "ズレ図の左端（足りない）"
+  },
+  "chartSpotOn": "ピタッ",
+  "@chartSpotOn": {
+    "description": "ズレ図の真ん中（ピタッ）"
+  },
+  "chartOver": "折りすぎ →",
+  "@chartOver": {
+    "description": "ズレ図の右端（折りすぎ）"
+  },
+  "sideSpotOn": "ピタッ",
+  "@sideSpotOn": {
+    "description": "ズレの向きの読み上げ（ぴったり）"
+  },
+  "sideOver": "折りすぎ",
+  "@sideOver": {
+    "description": "ズレの向きの読み上げ（大きすぎ）"
+  },
+  "sideUnder": "足りない",
+  "@sideUnder": {
+    "description": "ズレの向きの読み上げ（小さすぎ）"
+  },
+  "chartRowLabel": "{name}、{signed} {side}、{judgement}",
+  "@chartRowLabel": {
+    "description": "ズレ図の 1 行の読み上げ。judgement=PERFECT など",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "signed": {
+        "type": "String"
+      },
+      "side": {
+        "type": "String"
+      },
+      "judgement": {
+        "type": "String"
+      }
+    }
+  },
+  "chartRowNoReading": "{name}、計測なし、{judgement}",
+  "@chartRowNoReading": {
+    "description": "ズレ図の 1 行の読み上げ（計測なし）",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "judgement": {
+        "type": "String"
+      }
+    }
+  },
+  "openPrompt": "ひらいてね",
+  "@openPrompt": {
+    "description": "外側の画面に移ったときの見出し"
+  },
+  "openPromptBody": "このゲームは内側の画面で遊びます。\n直角より大きく開くと内側の画面に戻ります。",
+  "@openPromptBody": {
+    "description": "外側の画面に移ったときの説明"
+  }
+}

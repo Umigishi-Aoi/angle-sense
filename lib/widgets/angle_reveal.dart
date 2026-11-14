@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:material_ui/material_ui.dart';
 
+import '../l10n/l10n.dart';
 import '../ui/retro_theme.dart';
 
 /// 答え合わせ: 折りたたみを横から見た図。左半分（固定の面）を水平に置き、右半分を
@@ -65,9 +66,10 @@ class _AngleRevealState()
     return Semantics(
       container: true,
       image: true,
-      label:
-          '答え合わせの図。目標 ${widget.target.round()}°、'
-          'あなた ${actual == null ? '計測なし' : '${actual.round()}°'}',
+      label: context.l10n.revealFigureLabel(
+        widget.target.round(),
+        actual == null ? context.l10n.noReading : '${actual.round()}°',
+      ),
       child: _figure(scheme),
     );
   }
@@ -155,12 +157,12 @@ class const AngleZoom({
     // 読み上げは「拡大図、ズレ +4.0°」の 1 つにまとめる（見出しと数字を別々に読ませない）。
     return Semantics(
       container: true,
-      label: '拡大図、ズレ ${signedLabel(target, actual)}',
+      label: context.l10n.zoomLabel(signedLabel(target, actual)),
       excludeSemantics: true,
       child: LayoutBuilder(
         builder: (context, c) {
           final heading = Text(
-            '拡大',
+            context.l10n.zoomHeading,
             // 枠線の色（outline）では背景とのコントラストが 2.36:1 と低いので、
             // 補足文字の色（dim、5.64:1）にする。
             style: TextStyle(fontSize: 14, color: context.retroColors.dim),

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hinge_angle_game/game/scoring.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/screens/battle_screen.dart';
 import 'package:hinge_angle_game/services/app_settings.dart';
 import 'package:hinge_angle_game/services/feedback.dart';
@@ -40,6 +41,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BattleScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
             playerCount: 2,
@@ -77,6 +81,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BattleScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
             playerCount: 2,
@@ -102,6 +109,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: BattleScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
             playerCount: 2,
@@ -148,7 +158,11 @@ void main() {
       settings: settings,
       feedback: RecordingFeedback(settings),
       bestScores: inMemoryBestScores(),
-      child: MaterialApp(home: home),
+      child: MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: home,
+      ),
     );
     await tester.pumpWidget(app(BattleSetupScreen(angleProvider: provider)));
     expect(find.bySemanticsLabel('1人減らす'), findsOneWidget);

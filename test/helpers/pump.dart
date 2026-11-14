@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/screens/game_screen.dart';
 import 'package:hinge_angle_game/services/angle_provider.dart';
 import 'package:hinge_angle_game/services/app_settings.dart';
@@ -22,6 +23,9 @@ Future<void> pumpGame(
       bestScores: inMemoryBestScores(),
       requestReview: requestReview,
       child: MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Builder(
           builder: (context) => Scaffold(
             body: Center(

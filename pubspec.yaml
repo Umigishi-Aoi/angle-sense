@@ -5,7 +5,7 @@ description: >-
 publish_to: 'none'
 
 # ビルド番号（+N）は tool/release_testflight.sh が上げる。
-version: 1.1.0+16
+version: 1.1.0+18
 
 environment:
   sdk: ^3.14.0
@@ -16,6 +16,10 @@ dependencies:
     path: packages/device_angle
   flutter:
     sdk: flutter
+  # gen-l10n が生成する lib/l10n/app_localizations.dart が import する（アプリ側の delegates は material_ui のものを使う）。
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   material_ui: ^1.11.0
   objective_c: ^9.6.4
   shared_preferences: ^2.5.6
@@ -32,6 +36,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # l10n.yaml の設定で lib/l10n/ に翻訳クラスを生成する。
+  generate: true
 
   assets:
     - assets/sfx/

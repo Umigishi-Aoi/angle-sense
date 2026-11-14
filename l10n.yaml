@@ -1,0 +1,10 @@
+# 文言の元は日本語（app_ja.arb）。英語は app_en.arb。
+# Flutter 3.50 では synthetic-package は廃止済み（書くと警告）なので指定しない。生成先は arb-dir と同じ lib/l10n/。
+arb-dir: lib/l10n
+template-arb-file: app_ja.arb
+output-localization-file: app_localizations.dart
+nullable-getter: false
+# 3.50 の gen-l10n はまだ flutter_localizations の（非推奨になった）Material / Cupertino の delegate を
+# 生成コードの localizationsDelegates に書き出す。アプリは使わず（lib/l10n/l10n.dart の
+# appLocalizationsDelegates = material_ui の GlobalMaterialLocalizations.delegates を使う）、警告だけ抑える。
+header: "// ignore_for_file: deprecated_member_use"

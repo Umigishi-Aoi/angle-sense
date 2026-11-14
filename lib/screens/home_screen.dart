@@ -5,6 +5,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../app/route_observer.dart';
 import '../game/game_session.dart';
+import '../l10n/l10n.dart';
 import '../services/angle_provider.dart';
 import '../services/feedback.dart';
 import '../utils/result.dart';
@@ -112,12 +113,13 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = context.l10n;
     final provider = widget.angleProvider;
     return Scaffold(
       appBar: AppBar(
         actions: [
           IconButton(
-            tooltip: '設定',
+            tooltip: l10n.settingsTooltip,
             icon: const Icon(Icons.settings),
             onPressed: () => _showSettings(context),
           ),
@@ -132,18 +134,18 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
               builder: (context, ready, _) {
                 final info = <Widget>[
                   Text(
-                    'ピタッとアングル',
+                    l10n.appTitle,
                     style: theme.textTheme.displaySmall?.copyWith(
                       color: theme.colorScheme.primary,
                     ),
                   ),
                   const SizedBox(height: 8),
-                  const Text('目標の角度を覚えて、暗闇の中で合わせよう'),
+                  Text(l10n.homeTagline),
                   const SizedBox(height: 4),
-                  Text('平らが 0°・直角が 90°', style: theme.textTheme.bodySmall),
+                  Text(l10n.homeAngleScale, style: theme.textTheme.bodySmall),
                   const SizedBox(height: 32),
                   Text(
-                    '入力: ${provider.label}',
+                    l10n.homeInput(_inputName(l10n, provider)),
                     style: theme.textTheme.bodySmall,
                   ),
                   // 今の角度を絵と数字で出す（ゲーム中は出さない）。動かすと線が動くので、遊び方が伝わる。
@@ -156,12 +158,14 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
                                 _livePreview(theme, angle ?? 0),
                           ),
                         )
-                      : const Text('角度: --'),
+                      : Text(l10n.homeAngleUnknown),
                   const SizedBox(height: 8),
                   FutureBuilder<int?>(
                     future: _best,
                     builder: (context, best) => Text(
-                      best.data == null ? '自己ベスト: --' : '自己ベスト: ${best.data} 点',
+                      best.data == null
+                          ? l10n.homeBestNone
+                          : l10n.homeBest(best.data!),
                       style: theme.textTheme.bodyMedium,
                     ),
                   ),
@@ -177,7 +181,7 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
                     ),
                     // 角度が一度も取れていないうちは始めない（全問「計測なし」になるため）。
                     onPressed: ready ? _start : null,
-                    child: const Text('ひとりで（5問）'),
+                    child: Text(l10n.homeSolo(GameSession.defaultRounds)),
                   ),
                   const SizedBox(height: 12),
                   OutlinedButton(
@@ -189,17 +193,22 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
                             ),
                           )
                         : null,
-                    child: const Text('バトル（2〜10人）'),
+                    child: Text(
+                      l10n.homeBattle(
+                        BattleSetupScreen.minPlayers,
+                        BattleSetupScreen.maxPlayers,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
                   TextButton(
                     onPressed: () => _showHowTo(context),
-                    child: const Text('あそびかた・持ち方'),
+                    child: Text(l10n.homeHowTo),
                   ),
                   if (!ready) ...[
                     const SizedBox(height: 8),
                     Text(
-                      '角度を取得しています…（センサーのない端末では遊べません）',
+                      l10n.homeWaitingSensor,
                       style: theme.textTheme.bodySmall,
                     ),
                   ],
@@ -257,7 +266,7 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
   /// 変わるので、変化を自動で読み上げさせない（liveRegion にしない）。触れたときに今の値を読む。
   Widget _livePreview(ThemeData theme, double angle) => Semantics(
     container: true,
-    label: '今の角度',
+    label: context.l10n.homeCurrentAngle,
     value: '${angle.round()}°',
     excludeSemantics: true,
     child: _livePreviewRow(theme, angle),
@@ -280,38 +289,33 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
     ],
   );
 
-  static const _howToHinge =
-      '1. 内側の画面を見ながら、本を読むように両手で持つ\n'
-      '   （机に置いてノートパソコンのように開いてもOK）\n\n'
-      '2. 平らに開いた状態が 0°。折るほど大きくなり、直角が 90°\n\n'
-      '3. お題の角度を覚えたら、画面が暗くなる。5秒のうちに合わせて、そのまま止めておく\n\n'
-      '・お題は 10〜80°。直角より閉じると外側の画面に切り替わるので、そこまでは閉じない\n'
-      '・0° に近い角度はバネで開ききるので、指で支えて止める';
-
-  /// 普通の iPhone / iPad: 本体の傾きで遊ぶ（横向き固定）。
-  static const _howToTilt =
-      '1. 本体を横向きにして、両手で持つ\n\n'
-      '2. 画面を上にして平らに置いた状態が 0°。起こすほど大きくなり、まっすぐ立てると 90°\n\n'
-      '3. お題の角度を覚えたら、画面が暗くなる。5秒のうちに合わせて、そのまま止めておく\n\n'
-      '・お題は 10〜80°\n'
-      '・折りたたみ iPhone では、本体を折る角度で遊べます';
+  /// 入力源の名前（ヒンジ・傾き。テスト用などそれ以外は入力源が持つ名前）。
+  static String _inputName(AppLocalizations l10n, AngleProvider provider) =>
+      switch (provider.id) {
+        'hinge' => l10n.inputHinge,
+        'tilt' => l10n.inputTilt,
+        _ => provider.label,
+      };
 
   /// 持ち方・角度の測り方の説明。
   void _showHowTo(BuildContext context) {
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('あそびかた'),
+        title: Text(context.l10n.howToTitle),
         content: SingleChildScrollView(
           child: Text(
-            widget.angleProvider.id == 'hinge' ? _howToHinge : _howToTilt,
+            // 普通の iPhone / iPad は本体の傾きで遊ぶ（横向き固定）ので、説明を分ける。
+            widget.angleProvider.id == 'hinge'
+                ? context.l10n.howToHinge
+                : context.l10n.howToTilt,
             style: const TextStyle(fontSize: 16, height: 1.5),
           ),
         ),
         actions: [
           FilledButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: Text(context.l10n.ok),
           ),
         ],
       ),
@@ -320,56 +324,60 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
 
   void _showSettings(BuildContext context) {
     final settings = context.settings;
+    final l10n = context.l10n;
     showModalBottomSheet<void>(
       context: context,
       builder: (context) => SafeArea(
         child: ListenableBuilder(
           listenable: settings,
-          builder: (context, _) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              SwitchListTile(
-                title: const Text('効果音'),
-                subtitle: const Text('マナーモード中は鳴りません'),
-                value: settings.sound,
-                onChanged: (v) => settings.sound = v,
-              ),
-              SwitchListTile(
-                title: const Text('暗転中のカウント音'),
-                subtitle: const Text('1秒ごとの小さな音。リズムで時間が分かります'),
-                value: settings.blindTick,
-                onChanged: settings.sound
-                    ? (v) => settings.blindTick = v
-                    : null,
-              ),
-              SwitchListTile(
-                title: const Text('振動'),
-                subtitle: const Text('iPhoneの「触覚」設定によってはマナーモード中に鳴りません'),
-                value: settings.haptics,
-                onChanged: (v) => settings.haptics = v,
-              ),
-              // 開発用。リリース版（TestFlight・App Store）には出さない。
-              if (kDebugMode)
-                ListTile(
-                  title: const Text('診断（実機確認用）'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => DiagnosticsScreen(
-                        angleProvider: widget.angleProvider,
+          // 普通の iPhone の横向きでは、シートの高さ（画面の 9/16）に全項目が入らないのでスクロールする。
+          builder: (context, _) => SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SwitchListTile(
+                  title: Text(l10n.settingsSound),
+                  subtitle: Text(l10n.settingsSoundNote),
+                  value: settings.sound,
+                  onChanged: (v) => settings.sound = v,
+                ),
+                SwitchListTile(
+                  title: Text(l10n.settingsTick),
+                  subtitle: Text(l10n.settingsTickNote),
+                  value: settings.blindTick,
+                  onChanged: settings.sound
+                      ? (v) => settings.blindTick = v
+                      : null,
+                ),
+                SwitchListTile(
+                  title: Text(l10n.settingsHaptics),
+                  subtitle: Text(l10n.settingsHapticsNote),
+                  value: settings.haptics,
+                  onChanged: (v) => settings.haptics = v,
+                ),
+                // 開発用。リリース版（TestFlight・App Store）には出さない。
+                if (kDebugMode)
+                  ListTile(
+                    title: Text(l10n.settingsDiagnostics),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => DiagnosticsScreen(
+                          angleProvider: widget.angleProvider,
+                        ),
                       ),
                     ),
                   ),
+                ListTile(
+                  title: Text(l10n.settingsLicenses),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => showLicensePage(
+                    context: context,
+                    applicationName: l10n.appTitle,
+                  ),
                 ),
-              ListTile(
-                title: const Text('ライセンス'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => showLicensePage(
-                  context: context,
-                  applicationName: 'ピタッとアングル',
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

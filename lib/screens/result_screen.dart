@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import '../game/scoring.dart';
+import '../l10n/l10n.dart';
 import '../services/angle_provider.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
@@ -56,8 +57,9 @@ class _ResultScreenState() extends State<ResultScreen> {
     final isNewBest = widget.isNewBest;
     final theme = Theme.of(context);
     final retro = context.retroColors;
+    final l10n = context.l10n;
     final summary = <Widget>[
-      Text('ランク', style: theme.textTheme.titleMedium),
+      Text(l10n.rankHeading, style: theme.textTheme.titleMedium),
       Text(
         rank.label,
         style: theme.textTheme.displayLarge?.copyWith(
@@ -67,18 +69,21 @@ class _ResultScreenState() extends State<ResultScreen> {
         ),
       ),
       Text(
-        '$totalScore / ${results.length * Judgement.perfect.points} 点',
+        l10n.resultScore(
+          totalScore,
+          results.length * Judgement.perfect.points,
+        ),
         style: theme.textTheme.headlineSmall,
       ),
       if (isNewBest)
         Text(
-          '自己ベスト更新！',
+          l10n.newBest,
           style: theme.textTheme.titleMedium?.copyWith(
             color: theme.colorScheme.primary,
           ),
         )
       else if (bestScore != null)
-        Text('自己ベスト $bestScore 点', style: theme.textTheme.bodyMedium),
+        Text(l10n.bestScore(bestScore), style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
       // 文字を大きくする設定で横に並ばないときは、2 段に折り返す。
       Wrap(
@@ -88,7 +93,7 @@ class _ResultScreenState() extends State<ResultScreen> {
         children: [
           OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('ホーム'),
+            child: Text(l10n.home),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pushReplacement(
@@ -96,7 +101,7 @@ class _ResultScreenState() extends State<ResultScreen> {
                 builder: (_) => GameScreen(angleProvider: angleProvider),
               ),
             ),
-            child: const Text('もう一度'),
+            child: Text(l10n.playAgain),
           ),
         ],
       ),
@@ -106,14 +111,18 @@ class _ResultScreenState() extends State<ResultScreen> {
       padding: const EdgeInsets.fromLTRB(8, 8, 24, 16),
       children: [
         Text(
-          'あなたの感覚のズレ',
+          l10n.yourSenseGap,
           style: TextStyle(fontSize: 18, color: theme.colorScheme.secondary),
         ),
         const SizedBox(height: 4),
         DeviationChart(
           key: const ValueKey('result_chart'),
           rows: [
-            for (var i = 0; i < results.length; i++) ('${i + 1}問', results[i]),
+            for (var i = 0; i < results.length; i++)
+              (l10n.roundShort(i + 1), results[i]),
+          ],
+          spokenNames: [
+            for (var i = 0; i < results.length; i++) l10n.roundSpoken(i + 1),
           ],
         ),
         const SizedBox(height: 12),
@@ -122,10 +131,17 @@ class _ResultScreenState() extends State<ResultScreen> {
             padding: const EdgeInsets.symmetric(vertical: 3),
             child: Row(
               children: [
-                SizedBox(width: 56, child: Text('${i + 1}問')),
+                SizedBox(
+                  width: 56,
+                  child: Semantics(
+                    label: l10n.roundSpoken(i + 1),
+                    excludeSemantics: true,
+                    child: Text(l10n.roundShort(i + 1)),
+                  ),
+                ),
                 Expanded(
                   child: Text(
-                    _resultLine(results[i]),
+                    _resultLine(l10n, results[i]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -142,7 +158,10 @@ class _ResultScreenState() extends State<ResultScreen> {
       ],
     );
     return Scaffold(
-      appBar: AppBar(title: const Text('結果'), automaticallyImplyLeading: false),
+      appBar: AppBar(
+        title: Text(l10n.resultTitle),
+        automaticallyImplyLeading: false,
+      ),
       body: SafeArea(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -167,9 +186,9 @@ class _ResultScreenState() extends State<ResultScreen> {
 }
 
 /// 「45°→41°  -4.0°」。計測できなかったときは「45°→計測なし」。
-String _resultLine(RoundResult r) {
+String _resultLine(AppLocalizations l10n, RoundResult r) {
+  if (!r.measured) return l10n.resultLineNoReading(r.target.round());
   final target = '${r.target.round()}°';
-  if (!r.measured) return '$target→計測なし';
   final signed = AngleZoom.signedLabel(r.target, r.actual!);
   return '$target→${r.actual!.round()}°  $signed';
 }

@@ -1,6 +1,7 @@
 import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoPageTransition;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hinge_angle_game/app/route_observer.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/screens/home_screen.dart';
 import 'package:hinge_angle_game/services/app_settings.dart';
 import 'package:hinge_angle_game/services/feedback.dart';
@@ -26,6 +27,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: HomeScreen(
             angleProvider: provider,
           ),
@@ -36,13 +40,16 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('バトル（2〜10人）'));
     await tester.pumpAndSettle();
+    expect(find.bySemanticsLabel('2 人'), findsOneWidget);
+    // 日本語は「2 人」を 1 行で出す（単位を下に分けない）
     expect(find.text('2 人'), findsOneWidget);
+    expect(find.text('人'), findsNothing);
     for (var i = 0; i < 12; i++) {
       await tester.tap(find.text('＋'));
       await tester.pump();
     }
     await tester.pump();
-    expect(find.text('10 人'), findsOneWidget); // 上限
+    expect(find.bySemanticsLabel('10 人'), findsOneWidget); // 上限
     expect(tester.takeException(), isNull);
   });
 
@@ -55,6 +62,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           navigatorObservers: [routeObserver],
           home: HomeScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
@@ -65,12 +75,13 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('バトル（2〜10人）'));
     await tester.pumpAndSettle();
-    await tester.pageBack();
+    // 戻るボタンの説明は日本語（「戻る」）なので、英語の "Back" で探す pageBack は使わない。
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     await tester.tap(find.text('バトル（2〜10人）'));
     await tester.pumpAndSettle();
-    expect(find.text('2 人'), findsOneWidget);
+    expect(find.bySemanticsLabel('2 人'), findsOneWidget);
   });
 
   testWidgets('ホームに今の角度の絵を出す', (tester) async {
@@ -81,6 +92,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: HomeScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
           ),
@@ -99,6 +113,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           theme: Retro.theme(),
           home: HomeScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
@@ -114,7 +131,7 @@ void main() {
       expect(find.byType(CupertinoPageTransition), findsNothing);
       await tester.pumpAndSettle();
       if (label.startsWith('バトル')) {
-        await tester.pageBack();
+        await tester.tap(find.byType(BackButton));
         await tester.pumpAndSettle();
       }
     }
@@ -137,7 +154,11 @@ void main() {
           settings: settings,
           feedback: RecordingFeedback(settings),
           bestScores: inMemoryBestScores(),
-          child: MaterialApp(home: HomeScreen(angleProvider: provider)),
+          child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: HomeScreen(angleProvider: provider),
+          ),
         ),
       );
       await tester.pumpAndSettle();
@@ -214,7 +235,11 @@ void main() {
         settings: settings,
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
-        child: MaterialApp(home: HomeScreen(angleProvider: provider)),
+        child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: HomeScreen(angleProvider: provider),
+        ),
       ),
     );
     await tester.pumpAndSettle();

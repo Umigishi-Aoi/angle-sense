@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/screens/game_screen.dart';
 import 'package:hinge_angle_game/screens/result_screen.dart';
 import 'package:hinge_angle_game/services/app_settings.dart';
@@ -23,6 +24,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: GameScreen(
             angleProvider: provider,
           ),
@@ -52,6 +56,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: GameScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
           ),
@@ -213,6 +220,9 @@ void main() {
         feedback: fb,
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: GameScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
           ),
@@ -254,6 +264,9 @@ void main() {
     }) async {
       await tester.pumpWidget(
         MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: Center(
             child: SizedBox(
               width: width,
@@ -294,6 +307,9 @@ void main() {
           feedback: RecordingFeedback(settings),
           bestScores: inMemoryBestScores(),
           child: MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             builder: (context, child) =>
                 MediaQuery(data: edit(MediaQuery.of(context)), child: child!),
             home: GameScreen(
@@ -329,6 +345,9 @@ void main() {
         feedback: RecordingFeedback(settings),
         bestScores: inMemoryBestScores(),
         child: MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: GameScreen(
             angleProvider: FakeAngleProvider()..latestAngle = 45,
           ),

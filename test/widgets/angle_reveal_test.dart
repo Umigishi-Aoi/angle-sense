@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:hinge_angle_game/l10n/l10n.dart';
 import 'package:hinge_angle_game/ui/retro_theme.dart';
 import 'package:hinge_angle_game/widgets/angle_reveal.dart';
 import 'package:material_ui/material_ui.dart';
@@ -14,6 +15,9 @@ CustomPainter painterIn(WidgetTester tester, Finder of) => tester
 
 /// 動きを控える設定（iOS の「視差効果を減らす」）にした MaterialApp。
 Widget reducedMotionApp(Widget home) => MaterialApp(
+  localizationsDelegates: appLocalizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
+
   builder: (context, child) => MediaQuery(
     data: MediaQuery.of(context).copyWith(reduceMotion: true),
     child: child!,
@@ -31,6 +35,9 @@ void main() {
   testWidgets('拡大図は高さが足りなくても文字を残して縮む', (tester) async {
     await tester.pumpWidget(
       const MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         home: Center(
           child: SizedBox(
             width: 150,
@@ -49,6 +56,9 @@ void main() {
       Future<CustomPainter> pump(Color color) async {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             home: AnglePreview(target: 40, color: color),
           ),
         );
@@ -67,6 +77,9 @@ void main() {
       Future<CustomPainter> pump(double actual) async {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             home: AngleReveal(
               key: ValueKey(actual),
               target: 30,
@@ -87,6 +100,9 @@ void main() {
       Future<CustomPainter> pump(Color primary) async {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             themeAnimationDuration: Duration.zero, // 色をすぐ切り替える
             theme: ThemeData(
               colorScheme: ColorScheme.dark(primary: primary),
@@ -107,6 +123,9 @@ void main() {
       Future<CustomPainter> pump(Color secondary) async {
         await tester.pumpWidget(
           MaterialApp(
+            localizationsDelegates: appLocalizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+
             themeAnimationDuration: Duration.zero, // 色をすぐ切り替える
             theme: ThemeData(
               colorScheme: ColorScheme.dark(secondary: secondary),
@@ -140,7 +159,13 @@ void main() {
     );
 
     // 最後まで動かしたときの絵
-    await pumpReveal((home) => MaterialApp(home: home));
+    await pumpReveal(
+      (home) => MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: home,
+      ),
+    );
     await tester.pumpAndSettle();
     expect(completed, 1);
     final animatedEnd = painterIn(tester, find.byType(AngleReveal));
@@ -161,14 +186,22 @@ void main() {
     testWidgets('答え合わせの図は目標とあなたの角度を読み上げる', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
-        const MaterialApp(home: AngleReveal(target: 45, actual: 41.4)),
+        const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AngleReveal(target: 45, actual: 41.4),
+        ),
       );
       expect(
         find.bySemanticsLabel('答え合わせの図。目標 45°、あなた 41°'),
         findsOneWidget,
       );
       await tester.pumpWidget(
-        const MaterialApp(home: AngleReveal(target: 45, actual: null)),
+        const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AngleReveal(target: 45, actual: null),
+        ),
       );
       expect(
         find.bySemanticsLabel('答え合わせの図。目標 45°、あなた 計測なし'),
@@ -182,6 +215,9 @@ void main() {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
         const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+
           home: AnglePreview(target: 40, semanticsLabel: 'お題 40° の見本の図'),
         ),
       );
@@ -192,7 +228,11 @@ void main() {
     testWidgets('拡大図は見出しと数字をまとめて 1 つで読み上げる', (tester) async {
       final handle = tester.ensureSemantics();
       await tester.pumpWidget(
-        const MaterialApp(home: AngleZoom(target: 30, actual: 34)),
+        const MaterialApp(
+          localizationsDelegates: appLocalizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: AngleZoom(target: 30, actual: 34),
+        ),
       );
       expect(find.bySemanticsLabel('拡大図、ズレ +4.0°'), findsOneWidget);
       expect(find.bySemanticsLabel('拡大'), findsNothing);
@@ -203,6 +243,9 @@ void main() {
   testWidgets('拡大図は文字 2 倍で高さが文字より低くても、はみ出さずに縮む', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         builder: (context, child) => MediaQuery(
           data: MediaQuery.of(
             context,
@@ -229,6 +272,9 @@ void main() {
   testWidgets('拡大図の見出しは背景とのコントラストが 4.5:1 以上の色で描く', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
+        localizationsDelegates: appLocalizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+
         theme: Retro.theme(),
         home: const Scaffold(
           body: SizedBox(
