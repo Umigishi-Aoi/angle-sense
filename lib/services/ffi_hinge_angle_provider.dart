@@ -37,15 +37,10 @@ class FfiHingeAngleProvider() implements AngleProvider {
       'start mainThread=${DuoHingeObserver.isMainThread}',
     );
     _observer = DuoHingeObserver.start(_onUpdate);
-    debugPrint('ffi start: observer=${_observer != null} main=${DuoHingeObserver.isMainThread}');
     if (_observer == null) _complete(false);
   }
 
   void _onUpdate(HingeUpdate? u) {
-    debugPrint(
-      'ffi hinge: ${u?.status.name} ${u?.angleRadians} '
-      'main=${DuoHingeObserver.isMainThread}',
-    );
     DiagnosticsLog.instance.hinge({
       'available': u != null,
       'status': u?.status.name ?? 'unavailable',

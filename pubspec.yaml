@@ -19,6 +19,8 @@ dependencies:
   material_ui: ^1.11.0
   objective_c: ^9.6.4
   shared_preferences: ^2.5.6
+  store_review:
+    path: packages/store_review
 
 dev_dependencies:
   cupertino_ui: ^1.1.6

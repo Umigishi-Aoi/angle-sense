@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:store_review/store_review.dart';
 
 import 'screens/home_screen.dart';
 import 'services/angle_provider.dart';
@@ -33,6 +34,8 @@ Future<void> main() async {
   runApp(PitattoAngleApp(settings: settings, feedback: feedback));
 }
 
+final _storeReview = StoreReview();
+
 class const PitattoAngleApp({
   super.key,
   required final AppSettings settings,
@@ -40,7 +43,12 @@ class const PitattoAngleApp({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return AppServices(settings: settings, feedback: feedback, child: _app());
+    return AppServices(
+      settings: settings,
+      feedback: feedback,
+      requestReview: _storeReview.request,
+      child: _app(),
+    );
   }
 
   Widget _app() {

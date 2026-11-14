@@ -120,6 +120,9 @@ class const AppServices({
   super.key,
   required final AppSettings settings,
   required final GameFeedback feedback,
+
+  /// App Store のレビュー依頼（自己ベストを更新したときに呼ぶ）。
+  final Future<void> Function()? requestReview,
   required super.child,
 }) extends InheritedWidget {
   /// 再描画の依存を作らずに取る（initState からも呼べる）。
@@ -129,7 +132,9 @@ class const AppServices({
 
   @override
   bool updateShouldNotify(AppServices old) =>
-      settings != old.settings || feedback != old.feedback;
+      settings != old.settings ||
+      feedback != old.feedback ||
+      requestReview != old.requestReview;
 }
 
 /// AppServices が無いとき（ウィジェットテストなど）は無音・無振動で動かす。
@@ -143,4 +148,8 @@ extension AppServicesContext on BuildContext {
       AppServices.maybeOf(this)?.feedback ?? _fallbackFeedback;
   AppSettings get settings =>
       AppServices.maybeOf(this)?.settings ?? _fallbackSettings;
+
+  /// AppServices が無い・未設定なら何もしない。
+  Future<void> Function() get requestReview =>
+      AppServices.maybeOf(this)?.requestReview ?? () async {};
 }

@@ -6,21 +6,24 @@ import 'package:pub_semver/pub_semver.dart';
 import 'bindings.dart';
 
 /// ヒンジの状態。
-enum HingeStatus { unknown, closed, partiallyOpen, fullyOpen }
+enum HingeStatus() {
+  unknown,
+  closed,
+  partiallyOpen,
+  fullyOpen,
+}
 
-/// 1 回分の更新。[angleRadians] は 0 = 閉じた、π = 全開。
+/// 1 回分の更新。`angleRadians` は 0 = 閉じた、π = 全開。
 typedef HingeUpdate = ({double angleRadians, HingeStatus status});
 
 /// Flutter の画面に UIHingeInteraction を付けて、ヒンジの更新を受け取る。
 ///
 /// UIKit の呼び出しはメインスレッドで行う必要がある。Flutter のメイン isolate は
 /// iOS のメインスレッドで動くので、メイン isolate から呼ぶこと。
-class DuoHingeObserver {
-  DuoHingeObserver._(this._view, this._interaction);
-
-  final UIView _view;
-  final UIHingeInteraction _interaction;
-
+class DuoHingeObserver._(
+  final UIView _view,
+  final UIHingeInteraction _interaction,
+) {
   /// 今のスレッドがメインスレッドか（試作の確認用）。
   static bool get isMainThread => _pthreadMainNp() != 0;
 
@@ -31,19 +34,17 @@ class DuoHingeObserver {
     final view = _flutterView();
     if (view == null) return null;
     final handler =
-        ObjCBlock_ffiVoid_UIHingeInteraction_UIHingeInteractionUpdate.listener(
-          (_, update) {
-            final hinge = update.hinge;
-            onUpdate(
-              hinge == null
-                  ? null
-                  : (
-                      angleRadians: hinge.angle,
-                      status: _status(hinge.status),
-                    ),
-            );
-          },
-        );
+        ObjCBlock_ffiVoid_UIHingeInteraction_UIHingeInteractionUpdate.listener((
+          _,
+          update,
+        ) {
+          final hinge = update.hinge;
+          onUpdate(
+            hinge == null
+                ? null
+                : (angleRadians: hinge.angle, status: _status(hinge.status)),
+          );
+        });
     final interaction = UIHingeInteraction.alloc().initWithUpdateHandler(
       handler,
     );

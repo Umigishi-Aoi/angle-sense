@@ -4,11 +4,7 @@ import 'bindings.dart';
 ///
 /// 値は Dart から一定間隔で読み取る（CMMotionManager の「pull」方式）。
 /// コールバックを使わないので、スレッドをまたぐ心配がない。
-class TiltSensor {
-  TiltSensor._(this._manager);
-
-  final CMMotionManager _manager;
-
+class TiltSensor._(final CMMotionManager _manager) {
   /// 加速度センサーが無い端末（シミュレータの一部など）は null。
   static TiltSensor? start({
     Duration interval = const Duration(milliseconds: 20),

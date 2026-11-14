@@ -601,6 +601,13 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.12.2"
+  store_review:
+    dependency: "direct main"
+    description:
+      path: "packages/store_review"
+      relative: true
+    source: path
+    version: "0.1.0"
   stream_channel:
     dependency: transitive
     description:
@@ -715,4 +722,4 @@ packages:
     version: "2.2.4"
 sdks:
   dart: ">=3.14.0 <4.0.0"
-  flutter: ">=3.47.0"
+  flutter: ">=3.50.0"

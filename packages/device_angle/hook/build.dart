@@ -1,4 +1,6 @@
 // FFIgen が生成した Objective-C（ブロックの橋渡し）を、iOS 向けにだけビルドする。
+import 'dart:io';
+
 import 'package:code_assets/code_assets.dart';
 import 'package:hooks/hooks.dart';
 import 'package:logging/logging.dart';
@@ -20,7 +22,7 @@ void main(List<String> args) async {
     ).run(
       input: input,
       output: output,
-      logger: Logger('')..onRecord.listen((r) => print(r.message)),
+      logger: Logger('')..onRecord.listen((r) => stderr.writeln(r.message)),
     );
   });
 }

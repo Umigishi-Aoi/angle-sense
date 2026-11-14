@@ -1,0 +1,22 @@
+name: store_review
+description: Asks iOS to show the App Store review prompt (StoreKit 2, via Pigeon).
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.14.0
+  flutter: '>=3.50.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+dev_dependencies:
+  pedantic_mono: ^1.39.0
+  pigeon: ^29.0.1
+
+flutter:
+  plugin:
+    platforms:
+      ios:
+        pluginClass: StoreReviewPlugin

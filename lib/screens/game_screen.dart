@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../game/game_session.dart';
@@ -11,6 +13,9 @@ import '../widgets/angle_text.dart';
 import '../widgets/inner_display_guard.dart';
 import '../widgets/judgement_burst.dart';
 import 'result_screen.dart';
+
+/// 結果画面が出てからレビュー依頼を出すまでの待ち時間。
+const reviewRequestDelay = Duration(milliseconds: 1500);
 
 class const GameScreen({
   super.key,
@@ -119,7 +124,12 @@ class _GameScreenState() extends State<GameScreen> {
     final store = widget.bestScoreStore ?? BestScoreStore();
     var isNewBest = false;
     int? best;
+    int? previousBest;
     try {
+      previousBest = await store.load(
+        providerId: widget.angleProvider.id,
+        rounds: _session.rounds,
+      );
       isNewBest = await store.submit(
         providerId: widget.angleProvider.id,
         rounds: _session.rounds,
@@ -134,6 +144,10 @@ class _GameScreenState() extends State<GameScreen> {
       debugPrint('best score save failed: $e');
     }
     if (!mounted) return;
+    // 前の記録を上回ったときだけレビューを頼む（初回は誰でも「自己ベスト」になるので除く）。
+    if (isNewBest && previousBest != null) {
+      unawaited(_requestReviewLater(context.requestReview));
+    }
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => ResultScreen(
@@ -147,6 +161,19 @@ class _GameScreenState() extends State<GameScreen> {
         ),
       ),
     );
+  }
+
+  /// 結果画面のランク表示と効果音が落ち着いてから頼む。
+  static Future<void> _requestReviewLater(
+    Future<void> Function() requestReview,
+  ) async {
+    await Future<void>.delayed(reviewRequestDelay);
+    try {
+      await requestReview();
+    } on Exception catch (e) {
+      // 出なくてもゲームには関係ない。
+      debugPrint('review request failed: $e');
+    }
   }
 
   /// 中断確認。表示中はタイマーを止め、キャンセルしたら同じ問題をお題からやり直す。

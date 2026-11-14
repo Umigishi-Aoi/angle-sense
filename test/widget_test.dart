@@ -325,24 +325,34 @@ void main() {
           InMemorySharedPreferencesAsync.empty();
     });
 
-    Future<void> pumpGame(WidgetTester tester, AngleProvider provider) async {
+    Future<void> pumpGame(
+      WidgetTester tester,
+      AngleProvider provider, {
+      Future<void> Function()? requestReview,
+    }) async {
+      final settings = AppSettings();
       await tester.pumpWidget(
-        MaterialApp(
-          home: Builder(
-            builder: (context) => Scaffold(
-              body: Center(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => GameScreen(
-                        angleProvider: provider,
-                        bestScoreStore: BestScoreStore(
-                          prefs: SharedPreferencesAsync(),
+        AppServices(
+          settings: settings,
+          feedback: RecordingFeedback(settings),
+          requestReview: requestReview,
+          child: MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: Center(
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => GameScreen(
+                          angleProvider: provider,
+                          bestScoreStore: BestScoreStore(
+                            prefs: SharedPreferencesAsync(),
+                          ),
                         ),
                       ),
                     ),
+                    child: const Text('go'),
                   ),
-                  child: const Text('go'),
                 ),
               ),
             ),
@@ -353,8 +363,8 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('5問終えると結果画面に進み、自己ベストが保存される', (tester) async {
-      await pumpGame(tester, FakeAngleProvider()..latestAngle = 90);
+    /// 5 問を最後まで進めて結果画面を出す。
+    Future<void> playFive(WidgetTester tester) async {
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(seconds: 3));
         await tester.pump(const Duration(seconds: 5));
@@ -366,6 +376,19 @@ void main() {
         () => Future<void>.delayed(const Duration(milliseconds: 50)),
       );
       await tester.pumpAndSettle();
+      await tester.pump(reviewRequestDelay);
+    }
+
+    testWidgets('5問終えると結果画面に進み、自己ベストが保存される（初回はレビューを頼まない）', (
+      tester,
+    ) async {
+      var reviews = 0;
+      await pumpGame(
+        tester,
+        FakeAngleProvider()..latestAngle = 90,
+        requestReview: () async => reviews++,
+      );
+      await playFive(tester);
       expect(find.byType(ResultScreen), findsOneWidget);
       final best = await tester.runAsync(
         () =>
@@ -375,6 +398,45 @@ void main() {
       final result = tester.widget<ResultScreen>(find.byType(ResultScreen));
       expect(best, result.totalScore);
       expect(result.isNewBest, isTrue);
+      expect(reviews, 0);
+    });
+
+    testWidgets('前の自己ベストを上回ったらレビューを 1 回頼む', (tester) async {
+      await tester.runAsync(
+        () => SharedPreferencesAsync().setInt(
+          BestScoreStore.keyFor(providerId: 'fake', rounds: 5),
+          -1,
+        ),
+      );
+      var reviews = 0;
+      await pumpGame(
+        tester,
+        FakeAngleProvider()..latestAngle = 90,
+        requestReview: () async => reviews++,
+      );
+      await playFive(tester);
+      final result = tester.widget<ResultScreen>(find.byType(ResultScreen));
+      expect(result.isNewBest, isTrue);
+      expect(reviews, 1);
+    });
+
+    testWidgets('自己ベストを上回らなければレビューを頼まない', (tester) async {
+      await tester.runAsync(
+        () => SharedPreferencesAsync().setInt(
+          BestScoreStore.keyFor(providerId: 'fake', rounds: 5),
+          100000,
+        ),
+      );
+      var reviews = 0;
+      await pumpGame(
+        tester,
+        FakeAngleProvider()..latestAngle = 90,
+        requestReview: () async => reviews++,
+      );
+      await playFive(tester);
+      final result = tester.widget<ResultScreen>(find.byType(ResultScreen));
+      expect(result.isNewBest, isFalse);
+      expect(reviews, 0);
     });
 
     testWidgets('中断ダイアログ表示中はロックされず、「続ける」でお題からやり直す', (tester) async {
