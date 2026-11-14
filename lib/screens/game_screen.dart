@@ -249,56 +249,75 @@ class _GameScreenState() extends State<GameScreen> {
                   child: AnglePreview(
                     key: const ValueKey('target_preview'),
                     target: _vm.currentTarget.toDouble(),
+                    semanticsLabel: 'お題 ${_vm.currentTarget}° の見本の図',
                   ),
                 ),
               ),
               const SizedBox(width: 32),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  AngleText(_vm.currentTarget, fontSize: 144),
-                  const SizedBox(height: 8),
-                  Text(
-                    'あと ${_vm.countdown} 秒で暗くなる',
-                    style: const TextStyle(fontSize: 20),
-                  ),
-                  const SizedBox(height: 12),
-                  CountdownBar(
-                    remaining: _vm.countdown,
-                    total: _vm.showTargetSeconds,
-                    color: theme.colorScheme.primary,
-                  ),
-                ],
+              // 文字を大きくする設定で高さに収まらないときは、数字ごと縮めて収める（収まるときは等倍）。
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AngleText(_vm.currentTarget, fontSize: 144),
+                    const SizedBox(height: 8),
+                    Text(
+                      'あと ${_vm.countdown} 秒で暗くなる',
+                      style: const TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(height: 12),
+                    // 上の文と同じ内容なので読み上げない。
+                    ExcludeSemantics(
+                      child: CountdownBar(
+                        remaining: _vm.countdown,
+                        total: _vm.showTargetSeconds,
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
         );
       case GamePhase.blind:
         // 操作中は数字だけ: お題の角度と残り秒数。今の角度や見本の絵は出さない。
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${_vm.currentTarget}°',
-              key: const ValueKey('blind_target'),
-              style: TextStyle(fontSize: 40, color: retro.blindText),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '${_vm.countdown}',
-              style: TextStyle(
-                fontSize: 160,
-                height: 1,
+        // 文字を大きくする設定で高さに収まらないときは、全体を縮めて収める（収まるときは等倍）。
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Semantics(
+                label: 'お題 ${_vm.currentTarget}°',
+                excludeSemantics: true,
+                child: Text(
+                  '${_vm.currentTarget}°',
+                  key: const ValueKey('blind_target'),
+                  style: TextStyle(fontSize: 40, color: retro.blindText),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 残り秒数は下の四角の読み上げ（「残り N 秒」）で伝える。
+              ExcludeSemantics(
+                child: Text(
+                  '${_vm.countdown}',
+                  style: TextStyle(
+                    fontSize: 160,
+                    height: 1,
+                    color: retro.blindText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              CountdownBar(
+                remaining: _vm.countdown,
+                total: _vm.blindSeconds,
                 color: retro.blindText,
               ),
-            ),
-            const SizedBox(height: 16),
-            CountdownBar(
-              remaining: _vm.countdown,
-              total: _vm.blindSeconds,
-              color: retro.blindText,
-            ),
-          ],
+            ],
+          ),
         );
       case GamePhase.reveal:
         final r = _vm.lastResult!;
@@ -344,16 +363,22 @@ class _GameScreenState() extends State<GameScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _legend(theme.colorScheme.primary, '目標 ${r.target.round()}°'),
-                  const SizedBox(width: 24),
-                  _legend(
-                    theme.colorScheme.secondary,
-                    r.measured ? 'あなた ${r.actual!.round()}°' : 'あなた 計測なし',
-                  ),
-                ],
+              // 凡例は図の読み上げ（目標・あなたの角度）と同じ内容なので読み上げない。
+              ExcludeSemantics(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _legend(
+                      theme.colorScheme.primary,
+                      '目標 ${r.target.round()}°',
+                    ),
+                    const SizedBox(width: 24),
+                    _legend(
+                      theme.colorScheme.secondary,
+                      r.measured ? 'あなた ${r.actual!.round()}°' : 'あなた 計測なし',
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: 16),
               AnimatedOpacity(
@@ -427,6 +452,13 @@ class const CountdownBar({
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    return Semantics(
+      label: '残り $remaining 秒',
+      child: _boxes(),
+    );
+  }
+
+  Widget _boxes() {
     return FittedBox(
       fit: BoxFit.scaleDown,
       child: Row(

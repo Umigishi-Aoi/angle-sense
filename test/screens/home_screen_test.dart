@@ -201,4 +201,36 @@ void main() {
       expect(find.text('60°'), findsOneWidget);
     });
   });
+
+  testWidgets('今の角度は「今の角度 N°」の 1 つで読み上げ、絵は読まない（自動では読み上げない）', (
+    tester,
+  ) async {
+    final handle = tester.ensureSemantics();
+    final provider = StreamAngleProvider()..latestAngle = 40.4;
+    addTearDown(provider.close);
+    final settings = AppSettings();
+    await tester.pumpWidget(
+      AppServices(
+        settings: settings,
+        feedback: RecordingFeedback(settings),
+        bestScores: inMemoryBestScores(),
+        child: MaterialApp(home: HomeScreen(angleProvider: provider)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final node = find.bySemanticsLabel('今の角度');
+    expect(node, findsOneWidget);
+    expect(tester.getSemantics(node).value, '40°');
+    expect(
+      tester.getSemantics(node).flagsCollection.isLiveRegion,
+      isFalse,
+    );
+    expect(find.bySemanticsLabel('40°'), findsNothing); // 数字は別に読まない
+    provider.emit(62.6);
+    await tester.pump(); // 角度を受け取る
+    await tester.pump(); // 描き直す
+    expect(tester.getSemantics(node).value, '63°');
+    expect(find.byTooltip('設定'), findsOneWidget);
+    handle.dispose();
+  });
 }

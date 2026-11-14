@@ -32,55 +32,73 @@ class _BattleSetupScreenState() extends State<BattleSetupScreen> {
         angleProvider: widget.angleProvider,
         child: SafeArea(
           child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text(
-                  '1人1回ずつ、順番に角度を合わせます',
-                  style: TextStyle(fontSize: 18),
-                ),
-                const Text('お題は1人ずつちがいます。誤差の小さい人が勝ち'),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    OutlinedButton(
-                      onPressed: _players > BattleSetupScreen.minPlayers
-                          ? () => setState(() => _players--)
-                          : null,
-                      child: const Text('－'),
-                    ),
-                    SizedBox(
-                      width: 140,
-                      child: Text(
-                        '$_players 人',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          color: theme.colorScheme.primary,
+            // 文字を大きくする設定で収まらないときだけスクロールする。
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    '1人1回ずつ、順番に角度を合わせます',
+                    style: TextStyle(fontSize: 18),
+                  ),
+                  const Text('お題は1人ずつちがいます。誤差の小さい人が勝ち'),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      OutlinedButton(
+                        onPressed: _players > BattleSetupScreen.minPlayers
+                            ? () => setState(() => _players--)
+                            : null,
+                        // 記号だけでは読み上げで意味が伝わらないので、ボタンの説明を付ける。
+                        child: Semantics(
+                          label: '1人減らす',
+                          excludeSemantics: true,
+                          child: const Text('－'),
+                        ),
+                      ),
+                      SizedBox(
+                        width: 140,
+                        // 文字を大きくする設定で幅に入らないときは、折り返さずに縮める。
+                        child: Center(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              '$_players 人',
+                              textAlign: TextAlign.center,
+                              style: theme.textTheme.displaySmall?.copyWith(
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      OutlinedButton(
+                        onPressed: _players < BattleSetupScreen.maxPlayers
+                            ? () => setState(() => _players++)
+                            : null,
+                        child: Semantics(
+                          label: '1人増やす',
+                          excludeSemantics: true,
+                          child: const Text('＋'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton(
+                    onPressed: () => Navigator.of(context).pushReplacement(
+                      MaterialPageRoute<void>(
+                        builder: (_) => BattleScreen(
+                          angleProvider: widget.angleProvider,
+                          playerCount: _players,
                         ),
                       ),
                     ),
-                    OutlinedButton(
-                      onPressed: _players < BattleSetupScreen.maxPlayers
-                          ? () => setState(() => _players++)
-                          : null,
-                      child: const Text('＋'),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute<void>(
-                      builder: (_) => BattleScreen(
-                        angleProvider: widget.angleProvider,
-                        playerCount: _players,
-                      ),
-                    ),
+                    child: const Text('はじめる'),
                   ),
-                  child: const Text('はじめる'),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -218,6 +236,7 @@ class _BattleScreenState() extends State<BattleScreen> {
         appBar: AppBar(
           title: const Text('バトル'),
           leading: IconButton(
+            tooltip: 'やめる',
             icon: const Icon(Icons.close),
             onPressed: _confirmQuit,
           ),

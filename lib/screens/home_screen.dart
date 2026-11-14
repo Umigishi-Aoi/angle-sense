@@ -205,29 +205,43 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
                   ],
                 ];
                 // 普通の iPhone の横向き（高さ約 400）では縦に並べると収まらないので左右に分ける。
+                // 文字を大きくする設定で収まらないときだけスクロールできるようにする（収まるときは今までどおり中央）。
                 return LayoutBuilder(
-                  builder: (context, c) => c.maxHeight < 560
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: info,
-                            ),
-                            Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: buttons,
-                            ),
-                          ],
-                        )
-                      : Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            ...info,
-                            const SizedBox(height: 32),
-                            ...buttons,
-                          ],
-                        ),
+                  builder: (context, c) => SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: c.maxHeight),
+                      child: Center(
+                        child: c.maxHeight < 560
+                            ? Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  // 幅が足りないときは、左右それぞれの中で折り返す。
+                                  Flexible(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: info,
+                                    ),
+                                  ),
+                                  Flexible(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: buttons,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  ...info,
+                                  const SizedBox(height: 32),
+                                  ...buttons,
+                                ],
+                              ),
+                      ),
+                    ),
+                  ),
                 );
               },
             ),
@@ -238,7 +252,18 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
   }
 
   /// 今の角度の絵と数字。
-  Widget _livePreview(ThemeData theme, double angle) => Row(
+  ///
+  /// 読み上げは「今の角度 40°」の 1 つにまとめ、絵は読まない。値は角度が届くたび（1 秒に数十回）
+  /// 変わるので、変化を自動で読み上げさせない（liveRegion にしない）。触れたときに今の値を読む。
+  Widget _livePreview(ThemeData theme, double angle) => Semantics(
+    container: true,
+    label: '今の角度',
+    value: '${angle.round()}°',
+    excludeSemantics: true,
+    child: _livePreviewRow(theme, angle),
+  );
+
+  Widget _livePreviewRow(ThemeData theme, double angle) => Row(
     mainAxisSize: MainAxisSize.min,
     children: [
       SizedBox(

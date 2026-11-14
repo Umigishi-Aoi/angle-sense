@@ -94,6 +94,7 @@ class _BootstrapState() extends State<_Bootstrap> with WidgetsBindingObserver {
     _provider.then((p) {
       if (!mounted) return;
       if (p.id != 'hinge') {
+        // アクセシビリティの指針では向きを固定しないが、このゲームは横向き専用の設計なので意図して固定する（ヒンジ側も同じ）。
         // 普通の iPhone / iPad（傾きで遊ぶ）: 横向きに固定する。
         // 実機: 縦向きだと結果発表などのレイアウトが崩れる。傾きの角度は画面の法線だけで決まるので向きの影響はない。
         DiagnosticsLog.instance.add('rot', 'lock landscape (tilt)');

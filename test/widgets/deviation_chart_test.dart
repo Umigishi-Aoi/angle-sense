@@ -52,4 +52,86 @@ void main() {
     final over = tester.getTopLeft(find.byKey(const ValueKey('dev_P10')));
     expect(over.dx, greaterThan(pitta.dx));
   });
+
+  test('行の読み上げは名前・符号つきのズレと向き・判定', () {
+    expect(
+      DeviationChart.semanticsLabel(
+        'P1',
+        const RoundResult(target: 40, actual: 44),
+      ),
+      'P1、+4.0° 折りすぎ、GREAT',
+    );
+    expect(
+      DeviationChart.semanticsLabel(
+        'P2',
+        const RoundResult(target: 40, actual: 28),
+      ),
+      'P2、−12.0° 足りない、MISS',
+    );
+    expect(
+      DeviationChart.semanticsLabel(
+        'P3',
+        const RoundResult(target: 40, actual: 40),
+      ),
+      'P3、±0.0° ピタッ、PERFECT',
+    );
+    expect(
+      DeviationChart.semanticsLabel(
+        'P4',
+        const RoundResult(target: 40, actual: null),
+      ),
+      'P4、計測なし、MISS',
+    );
+  });
+
+  testWidgets('読み上げは行ごとの説明だけ（見出し・目盛りは読まない）', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: DeviationChart(
+            rows: [('P1', RoundResult(target: 40, actual: 44))],
+          ),
+        ),
+      ),
+    );
+    expect(find.bySemanticsLabel('P1、+4.0° 折りすぎ、GREAT'), findsOneWidget);
+    expect(find.bySemanticsLabel('ピタッ'), findsNothing);
+    expect(find.bySemanticsLabel('+30°'), findsNothing);
+    handle.dispose();
+  });
+
+  testWidgets('文字を大きくする設定では、行の高さも同じ割合で広がる', (tester) async {
+    Future<double> rowHeight(double scale) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: TextScaler.linear(scale)),
+            child: child!,
+          ),
+          home: const Scaffold(
+            body: DeviationChart(
+              rows: [('P1', RoundResult(target: 40, actual: 44))],
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      return tester
+          .getSize(
+            find
+                .ancestor(
+                  of: find.text('P1'),
+                  matching: find.byType(SizedBox),
+                )
+                .at(1), // 0 は名前の幅の箱、1 が行の箱
+          )
+          .height;
+    }
+
+    expect(await rowHeight(1), 30);
+    expect(await rowHeight(2), 60);
+  });
 }

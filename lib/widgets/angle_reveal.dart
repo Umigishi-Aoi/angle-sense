@@ -60,6 +60,19 @@ class _AngleRevealState()
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final actual = widget.actual;
+    // 読み上げでは絵の代わりに、2 本の線の角度を伝える（動きの途中の角度は読まない）。
+    return Semantics(
+      container: true,
+      image: true,
+      label:
+          '答え合わせの図。目標 ${widget.target.round()}°、'
+          'あなた ${actual == null ? '計測なし' : '${actual.round()}°'}',
+      child: _figure(scheme),
+    );
+  }
+
+  Widget _figure(ColorScheme scheme) {
     return AspectRatio(
       aspectRatio: _ArcPainter.cols / _ArcPainter.rows,
       // 振り上げの間は毎フレーム描き直すので、周り（凡例・判定の文字）を巻き込まないよう分ける。
@@ -94,11 +107,14 @@ class const AnglePreview({
   super.key,
   required final double target,
   final Color? color,
+
+  /// 読み上げる説明。null なら絵は読み上げない（横の数字で伝わる場合など）。
+  final String? semanticsLabel,
 }) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return AspectRatio(
+    final figure = AspectRatio(
       aspectRatio: _ArcPainter.cols / _ArcPainter.rows,
       child: CustomPaint(
         painter: _ArcPainter(
@@ -112,6 +128,9 @@ class const AnglePreview({
         ),
       ),
     );
+    final label = semanticsLabel;
+    if (label == null) return figure;
+    return Semantics(container: true, image: true, label: label, child: figure);
   }
 }
 
@@ -133,34 +152,88 @@ class const AngleZoom({
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text('拡大', style: TextStyle(fontSize: 14, color: scheme.outline)),
-        const SizedBox(height: 4),
-        // 横向きの iPhone では高さが足りないので、絵のほうを縮めて文字を残す。
-        Flexible(
-          child: AspectRatio(
-            aspectRatio: _ZoomPainter.cols / _ZoomPainter.rows,
-            child: CustomPaint(
-              painter: _ZoomPainter(
-                target: target,
-                actual: actual.clamp(0, _ArcPainter.maxDrawDeg).toDouble(),
-                targetColor: scheme.primary,
-                actualColor: scheme.secondary,
-                gridColor: scheme.outlineVariant,
-              ),
+    // 読み上げは「拡大図、ズレ +4.0°」の 1 つにまとめる（見出しと数字を別々に読ませない）。
+    return Semantics(
+      container: true,
+      label: '拡大図、ズレ ${signedLabel(target, actual)}',
+      excludeSemantics: true,
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final heading = Text(
+            '拡大',
+            style: TextStyle(fontSize: 14, color: scheme.outline),
+          );
+          final value = Text(
+            signedLabel(target, actual),
+            key: const ValueKey('signed_error'),
+            style: TextStyle(fontSize: 24, color: scheme.secondary),
+          );
+          final picture = CustomPaint(
+            painter: _ZoomPainter(
+              target: target,
+              actual: actual.clamp(0, _ArcPainter.maxDrawDeg).toDouble(),
+              targetColor: scheme.primary,
+              actualColor: scheme.secondary,
+              gridColor: scheme.outlineVariant,
             ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          signedLabel(target, actual),
-          key: const ValueKey('signed_error'),
-          style: TextStyle(fontSize: 24, color: scheme.secondary),
-        ),
-      ],
+          );
+          final textHeight =
+              _textHeight(context, heading) + _textHeight(context, value) + 8;
+          if (c.maxHeight < textHeight && c.maxWidth.isFinite) {
+            // 文字を大きくする設定などで文字だけでも高さに入らないときは、
+            // 絵を幅いっぱいの大きさで作ってから全体を縮める（はみ出さないように）。
+            return FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  heading,
+                  const SizedBox(height: 4),
+                  SizedBox(
+                    width: c.maxWidth,
+                    height: c.maxWidth * _ZoomPainter.rows / _ZoomPainter.cols,
+                    child: picture,
+                  ),
+                  const SizedBox(height: 4),
+                  value,
+                ],
+              ),
+            );
+          }
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              heading,
+              const SizedBox(height: 4),
+              // 横向きの iPhone では高さが足りないので、絵のほうを縮めて文字を残す。
+              Flexible(
+                child: AspectRatio(
+                  aspectRatio: _ZoomPainter.cols / _ZoomPainter.rows,
+                  child: picture,
+                ),
+              ),
+              const SizedBox(height: 4),
+              value,
+            ],
+          );
+        },
+      ),
     );
+  }
+
+  /// [text] を今の文字の大きさの設定で 1 行に描いたときの高さ。
+  static double _textHeight(BuildContext context, Text text) {
+    final painter = TextPainter(
+      text: TextSpan(
+        text: text.data,
+        style: DefaultTextStyle.of(context).style.merge(text.style),
+      ),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
   }
 }
 

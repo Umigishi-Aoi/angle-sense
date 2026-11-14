@@ -139,4 +139,24 @@ void main() {
     expect(find.byKey(const ValueKey('dev_たろう')), findsOneWidget);
     expect(find.byKey(const ValueKey('dev_P2')), findsOneWidget);
   });
+
+  testWidgets('読み上げ: × は「やめる」、人数の －／＋ は「1人減らす／増やす」', (tester) async {
+    final handle = tester.ensureSemantics();
+    final settings = AppSettings();
+    final provider = FakeAngleProvider()..latestAngle = 45;
+    Widget app(Widget home) => AppServices(
+      settings: settings,
+      feedback: RecordingFeedback(settings),
+      bestScores: inMemoryBestScores(),
+      child: MaterialApp(home: home),
+    );
+    await tester.pumpWidget(app(BattleSetupScreen(angleProvider: provider)));
+    expect(find.bySemanticsLabel('1人減らす'), findsOneWidget);
+    expect(find.bySemanticsLabel('1人増やす'), findsOneWidget);
+    await tester.pumpWidget(
+      app(BattleScreen(angleProvider: provider, playerCount: 2)),
+    );
+    expect(find.byTooltip('やめる'), findsOneWidget);
+    handle.dispose();
+  });
 }

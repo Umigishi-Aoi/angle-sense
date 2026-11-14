@@ -153,4 +153,73 @@ void main() {
     expect(completed, 2);
     expect(tester.hasRunningAnimations, isFalse);
   });
+
+  group('読み上げ', () {
+    testWidgets('答え合わせの図は目標とあなたの角度を読み上げる', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        const MaterialApp(home: AngleReveal(target: 45, actual: 41.4)),
+      );
+      expect(
+        find.bySemanticsLabel('答え合わせの図。目標 45°、あなた 41°'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(
+        const MaterialApp(home: AngleReveal(target: 45, actual: null)),
+      );
+      expect(
+        find.bySemanticsLabel('答え合わせの図。目標 45°、あなた 計測なし'),
+        findsOneWidget,
+      );
+      await tester.pumpWidget(const SizedBox()); // タイマーを残さない
+      handle.dispose();
+    });
+
+    testWidgets('見本の絵は説明があるときだけ読み上げる', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: AnglePreview(target: 40, semanticsLabel: 'お題 40° の見本の図'),
+        ),
+      );
+      expect(find.bySemanticsLabel('お題 40° の見本の図'), findsOneWidget);
+      handle.dispose();
+    });
+
+    testWidgets('拡大図は見出しと数字をまとめて 1 つで読み上げる', (tester) async {
+      final handle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        const MaterialApp(home: AngleZoom(target: 30, actual: 34)),
+      );
+      expect(find.bySemanticsLabel('拡大図、ズレ +4.0°'), findsOneWidget);
+      expect(find.bySemanticsLabel('拡大'), findsNothing);
+      handle.dispose();
+    });
+  });
+
+  testWidgets('拡大図は文字 2 倍で高さが文字より低くても、はみ出さずに縮む', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: const TextScaler.linear(2)),
+          child: child!,
+        ),
+        home: const Center(
+          child: SizedBox(
+            width: 150,
+            height: 30,
+            child: AngleZoom(target: 30, actual: 34),
+          ),
+        ),
+      ),
+    );
+    expect(tester.takeException(), isNull);
+    expect(find.text('+4.0°'), findsOneWidget);
+    expect(
+      tester.getSize(find.byType(AngleZoom)).height,
+      lessThanOrEqualTo(30),
+    );
+  });
 }

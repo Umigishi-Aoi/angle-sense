@@ -319,4 +319,40 @@ void main() {
       const Duration(milliseconds: 250),
     );
   });
+
+  testWidgets('読み上げ: お題は見本の図、暗転中は「お題 N°」と「残り N 秒」', (tester) async {
+    final handle = tester.ensureSemantics();
+    final settings = AppSettings();
+    await tester.pumpWidget(
+      AppServices(
+        settings: settings,
+        feedback: RecordingFeedback(settings),
+        bestScores: inMemoryBestScores(),
+        child: MaterialApp(
+          home: GameScreen(
+            angleProvider: FakeAngleProvider()..latestAngle = 45,
+          ),
+        ),
+      ),
+    );
+    expect(
+      find.bySemanticsLabel(RegExp(r'^お題 \d+° の見本の図$')),
+      findsOneWidget,
+    );
+    // お題の間は「あと N 秒で暗くなる」の文で伝えるので、四角は読まない。
+    expect(find.bySemanticsLabel(RegExp('^残り')), findsNothing);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.bySemanticsLabel(RegExp(r'^お題 \d+°$')), findsOneWidget);
+    expect(find.bySemanticsLabel('残り 5 秒'), findsOneWidget);
+    expect(find.bySemanticsLabel('5'), findsNothing);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
+    expect(
+      find.bySemanticsLabel(RegExp(r'^答え合わせの図。目標 \d+°、あなた 45°$')),
+      findsOneWidget,
+    );
+    await tester.pumpWidget(const SizedBox()); // タイマーを残さない
+    handle.dispose();
+  });
 }

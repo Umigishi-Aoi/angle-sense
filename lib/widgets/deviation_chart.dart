@@ -2,6 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../game/scoring.dart';
 import '../ui/retro_theme.dart';
+import 'angle_reveal.dart';
 
 /// バトルの「感覚のズレ」図。
 ///
@@ -19,51 +20,77 @@ class const DeviationChart({
   static double? signedError(RoundResult r) =>
       r.actual == null ? null : r.actual! - r.target;
 
+  /// 1 行の読み上げ。点の位置と色（判定）は見えないので、言葉にする。
+  /// 例: 「P1、+4.0° 折りすぎ、GREAT」「P2、計測なし、MISS」
+  static String semanticsLabel(String name, RoundResult r) {
+    final err = signedError(r);
+    if (err == null) return '$name、計測なし、${r.judgement.label}';
+    final signed = AngleZoom.signedLabel(r.target, r.actual!);
+    final side = signed.startsWith('±') ? 'ピタッ' : (err > 0 ? '折りすぎ' : '足りない');
+    return '$name、$signed $side、${r.judgement.label}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final retro = context.retroColors;
+    // 文字を大きくする設定では、行の高さも同じ割合で広げる（名前が上下で切れないように）。
+    final rowHeight = MediaQuery.textScalerOf(
+      context,
+    ).scale(_rowHeight).clamp(_rowHeight, double.infinity);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Row(
-          children: [
-            const SizedBox(width: _labelWidth),
-            Expanded(
-              child: Row(
-                children: [
-                  Text('← 足りない', style: TextStyle(color: retro.dim)),
-                  const Spacer(),
-                  Text('ピタッ', style: TextStyle(color: scheme.primary)),
-                  const Spacer(),
-                  Text('折りすぎ →', style: TextStyle(color: retro.dim)),
-                ],
+        // 見出しと目盛りは図の読み方なので読み上げない（各行の説明に向きを含める）。
+        ExcludeSemantics(
+          child: Row(
+            children: [
+              const SizedBox(width: _labelWidth),
+              Expanded(
+                // 文字を大きくする設定で 1 行に入らないときは折り返す
+                // （1 行に入るときは両端と真ん中に並ぶので、Spacer 2 つと同じ見た目）。
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  children: [
+                    Text('← 足りない', style: TextStyle(color: retro.dim)),
+                    Text('ピタッ', style: TextStyle(color: scheme.primary)),
+                    Text('折りすぎ →', style: TextStyle(color: retro.dim)),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         const SizedBox(height: 4),
-        for (final (name, result) in rows) _row(name, result, scheme, retro),
+        for (final (name, result) in rows)
+          Semantics(
+            container: true,
+            label: semanticsLabel(name, result),
+            excludeSemantics: true,
+            child: _row(name, result, rowHeight, scheme, retro),
+          ),
         const SizedBox(height: 4),
-        Row(
-          children: [
-            const SizedBox(width: _labelWidth),
-            Expanded(
-              child: Row(
-                children: [
-                  Text(
-                    '-${range.round()}°',
-                    style: TextStyle(color: retro.dim, fontSize: 12),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '+${range.round()}°',
-                    style: TextStyle(color: retro.dim, fontSize: 12),
-                  ),
-                ],
+        ExcludeSemantics(
+          child: Row(
+            children: [
+              const SizedBox(width: _labelWidth),
+              Expanded(
+                child: Row(
+                  children: [
+                    Text(
+                      '-${range.round()}°',
+                      style: TextStyle(color: retro.dim, fontSize: 12),
+                    ),
+                    const Spacer(),
+                    Text(
+                      '+${range.round()}°',
+                      style: TextStyle(color: retro.dim, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ],
     );
@@ -76,12 +103,13 @@ class const DeviationChart({
   Widget _row(
     String name,
     RoundResult result,
+    double rowHeight,
     ColorScheme scheme,
     RetroColors retro,
   ) {
     final err = signedError(result);
     return SizedBox(
-      height: _rowHeight,
+      height: rowHeight,
       child: Row(
         children: [
           SizedBox(
@@ -103,7 +131,7 @@ class const DeviationChart({
                   Positioned(
                     left: 0,
                     right: 0,
-                    top: _rowHeight / 2 - 1,
+                    top: rowHeight / 2 - 1,
                     height: 2,
                     child: ColoredBox(color: scheme.outline),
                   ),
@@ -132,7 +160,7 @@ class const DeviationChart({
                   children.add(
                     Positioned(
                       left: x,
-                      top: (_rowHeight - _dot) / 2,
+                      top: (rowHeight - _dot) / 2,
                       width: _dot,
                       height: _dot,
                       child: ColoredBox(

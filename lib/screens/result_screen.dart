@@ -80,14 +80,16 @@ class _ResultScreenState() extends State<ResultScreen> {
       else if (bestScore != null)
         Text('自己ベスト $bestScore 点', style: theme.textTheme.bodyMedium),
       const SizedBox(height: 16),
-      Row(
-        mainAxisSize: MainAxisSize.min,
+      // 文字を大きくする設定で横に並ばないときは、2 段に折り返す。
+      Wrap(
+        alignment: WrapAlignment.center,
+        spacing: 16,
+        runSpacing: 8,
         children: [
           OutlinedButton(
             onPressed: () => Navigator.of(context).pop(),
             child: const Text('ホーム'),
           ),
-          const SizedBox(width: 16),
           FilledButton(
             onPressed: () => Navigator.of(context).pushReplacement(
               MaterialPageRoute<void>(
