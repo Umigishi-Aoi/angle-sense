@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 大きく角度を表示する。
 class AngleText extends StatelessWidget {

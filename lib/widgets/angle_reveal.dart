@@ -1,6 +1,6 @@
 import 'dart:math' as math;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 答え合わせ: 折りたたみを横から見た図。左半分（固定の面）を水平に置き、右半分を
 /// 0°（平ら）から実際の角度まで持ち上げて、目標線と重ねる。[actual] が null（計測なし）なら目標線だけ描く。
