@@ -5,21 +5,24 @@ description: >-
 publish_to: 'none'
 
 # ビルド番号（+N）は tool/release_testflight.sh が上げる。
-version: 1.0.0+14
+version: 1.1.0+15
 
 environment:
   sdk: ^3.14.0
 
 dependencies:
   audioplayers: ^6.8.1
+  device_angle:
+    path: packages/device_angle
   flutter:
     sdk: flutter
   material_ui: ^1.11.0
-  sensors_plus: ^7.1.1
+  objective_c: ^9.6.4
   shared_preferences: ^2.5.6
 
 dev_dependencies:
   cupertino_ui: ^1.1.6
+  ffigen: ^23.0.0
   flutter_test:
     sdk: flutter
   pedantic_mono: ^1.39.0
