@@ -6,7 +6,9 @@ import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:store_review/store_review.dart';
 
+import 'app/orientation_controller.dart';
 import 'app/route_observer.dart';
+import 'app/sensor_lifecycle.dart';
 import 'repositories/best_score_repository.dart';
 import 'screens/home_screen.dart';
 import 'services/angle_provider.dart';
@@ -15,7 +17,6 @@ import 'services/app_settings.dart';
 import 'services/best_score_store.dart';
 import 'services/diagnostics_log.dart';
 import 'services/feedback.dart';
-import 'services/tilt_angle_provider.dart';
 import 'ui/retro_theme.dart';
 
 Future<void> main() async {
@@ -80,147 +81,38 @@ class const _Bootstrap() extends StatefulWidget {
 }
 
 class _BootstrapState() extends State<_Bootstrap> with WidgetsBindingObserver {
-  late final Future<AngleProvider> _provider = _resolveProvider();
+  late final Future<AngleProvider> _provider = resolveAngleProviderOrTilt();
+  late final SensorLifecycle _sensors = SensorLifecycle(_provider);
+  final OrientationController _orientation = OrientationController();
   late final AppLifecycleListener _lifecycle;
-  bool _stoppedInBackground = false;
 
   @override
   void initState() {
     super.initState();
-    // バックグラウンド中はセンサー（Android の加速度など）を止める。
-    // inactive では止めない（Duo の開閉で画面が切り替わる瞬間に出る可能性があるため）。
+    // バックグラウンド中はセンサー（Android の加速度など）を止める（SensorLifecycle）。
     WidgetsBinding.instance.addObserver(this);
     _logSize();
     _provider.then((p) {
       if (!mounted) return;
-      if (p.id != 'hinge') {
-        // アクセシビリティの指針では向きを固定しないが、このゲームは横向き専用の設計なので意図して固定する（ヒンジ側も同じ）。
-        // 普通の iPhone / iPad（傾きで遊ぶ）: 横向きに固定する。
-        // 実機: 縦向きだと結果発表などのレイアウトが崩れる。傾きの角度は画面の法線だけで決まるので向きの影響はない。
-        DiagnosticsLog.instance.add('rot', 'lock landscape (tilt)');
-        SystemChrome.setPreferredOrientations(_landscape);
-        return;
-      }
-      _hinge = p;
-      p.onOuterDisplay.addListener(_applyOrientation);
-      _applyOrientation();
+      _orientation.attach(p);
     });
     _lifecycle = AppLifecycleListener(
       // 実機確認用: 開閉で inactive / hidden / paused のどれが出るかを記録する。
       onStateChange: (s) => DiagnosticsLog.instance.add('life', s.name),
-      onPause: () async {
-        _stoppedInBackground = true;
-        await _guard('stop', () async => await (await _provider).stop());
-      },
-      onResume: () async {
-        if (!_stoppedInBackground) return;
-        _stoppedInBackground = false;
-        await _guard('start', () async => await (await _provider).start());
-      },
+      onPause: _sensors.onPause,
+      onResume: _sensors.onResume,
     );
-  }
-
-  /// 入力源を決める。失敗しても読み込み画面のまま止まらないよう、傾きに切り替えてホームを出す
-  /// （傾きも始められなければ角度が来ないだけで、ホームに「取得しています…」と出る）。
-  static Future<AngleProvider> _resolveProvider() async {
-    try {
-      return await resolveAngleProvider();
-    } on Object catch (e) {
-      debugPrint('angle provider resolve failed: $e');
-    }
-    final tilt = TiltAngleProvider();
-    await _guard('tilt start', tilt.start);
-    return tilt;
-  }
-
-  /// センサーの開始・停止の失敗でアプリを落とさない（記録だけする）。
-  static Future<void> _guard(String label, Future<void> Function() f) async {
-    try {
-      await f();
-    } on Object catch (e) {
-      debugPrint('angle provider $label failed: $e');
-    }
   }
 
   /// 外側⇔内側の画面切り替えはサイズの変化として現れるので記録する。
   @override
   void didChangeMetrics() => _logSize();
 
-  AngleProvider? _hinge;
-
-  /// 内側の画面で横長になる向きの組。最初は landscape を試し、縦長になったら portrait に切り替えて覚える
-  /// （Duo の内側の画面でどちらが横長かを決め打ちしないため）。
-  static const List<DeviceOrientation> _landscape = [
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ];
-  static const List<DeviceOrientation> _portrait = [
-    DeviceOrientation.portraitUp,
-  ];
-  List<DeviceOrientation> _innerSet = _landscape;
-  List<DeviceOrientation>? _applied;
-
-  /// 画面の回転を固定する（実機: 開いて持ち上げたり触ったりすると縦長に回ってしまう）。
-  /// - 内側の画面: 横長に固定
-  /// - 外側の画面（「ひらいてね」だけを出す）: 固定しない
-  void _applyOrientation() {
-    final p = _hinge;
-    if (p == null) return;
-    final want = p.onOuterDisplay.value
-        ? const <DeviceOrientation>[]
-        : _innerSet;
-    if (identical(want, _applied)) return;
-    _applied = want;
-    DiagnosticsLog.instance.add(
-      'rot',
-      want.isEmpty
-          ? 'unlocked (outer)'
-          : 'lock ${want.map((o) => o.name).join(',')}',
-    );
-    SystemChrome.setPreferredOrientations(want);
-    _verifyTimer?.cancel();
-    if (want.isNotEmpty && !_flipped) {
-      // 固定した「結果」のサイズで判定する。固定の直前に届く通知（開いた瞬間の、まだ回っていない縦長など）は使わない。
-      _verifyTimer = Timer(const Duration(milliseconds: 800), _verifyInnerLock);
-    }
-  }
-
-  Timer? _verifyTimer;
-
-  /// 切り替えは1回だけ（どちらの組でも縦長になる異常時に行ったり来たりしないため）。
-  bool _flipped = false;
-
-  /// 固定したのに縦長 = この組は横長にならない。もう片方の組に切り替えて覚える。
-  void _verifyInnerLock() {
-    final p = _hinge;
-    if (!mounted ||
-        p == null ||
-        p.onOuterDisplay.value ||
-        !identical(_applied, _innerSet)) {
-      return;
-    }
-    final views = WidgetsBinding.instance.platformDispatcher.views;
-    if (views.isEmpty) return;
-    final v = views.first;
-    final size = v.physicalSize / v.devicePixelRatio;
-    // 短辺 600 未満は外側の画面（466x678）なので見ない。
-    if (size.shortestSide < 600 || size.width >= size.height) return;
-    _flipped = true;
-    _innerSet = identical(_innerSet, _landscape) ? _portrait : _landscape;
-    DiagnosticsLog.instance.add(
-      'rot',
-      'tall after lock -> switch to ${_innerSet.map((o) => o.name).join(',')}',
-    );
-    _applyOrientation();
-  }
-
   String? _lastSize;
 
   void _logSize() {
-    final views = WidgetsBinding.instance.platformDispatcher.views;
-    if (views.isEmpty) return;
-    final v = views.first;
-    final s = v.physicalSize / v.devicePixelRatio;
+    final s = currentViewSize();
+    if (s == null) return;
     final label =
         '${s.width.toStringAsFixed(0)}x${s.height.toStringAsFixed(0)}';
     if (label == _lastSize) return; // 同じサイズの通知は記録しない
@@ -230,8 +122,7 @@ class _BootstrapState() extends State<_Bootstrap> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    _hinge?.onOuterDisplay.removeListener(_applyOrientation);
-    _verifyTimer?.cancel();
+    _orientation.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _lifecycle.dispose();
     super.dispose();

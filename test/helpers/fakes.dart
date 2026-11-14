@@ -1,10 +1,12 @@
 import 'dart:async';
 
+import 'package:device_angle/device_angle.dart';
 import 'package:flutter/foundation.dart';
 import 'package:hinge_angle_game/repositories/best_score_repository.dart';
 import 'package:hinge_angle_game/services/angle_provider.dart';
 import 'package:hinge_angle_game/services/best_score_store.dart';
 import 'package:hinge_angle_game/services/feedback.dart';
+import 'package:hinge_angle_game/services/tilt_angle_provider.dart';
 import 'package:hinge_angle_game/utils/result.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -97,4 +99,59 @@ class FakeBestScoreRepository({
     return submitResult ??
         Result.ok((previousBest: null, best: score, isNewBest: true));
   }
+}
+
+/// 加速度センサーの偽物。[next] に入れた値を read で返す（単位 g・Core Motion の向き）。
+class FakeTiltSensor() {
+  ({double x, double y, double z})? next;
+  int startCount = 0;
+  int stopCount = 0;
+  Duration? interval;
+
+  /// TiltAngleProvider の startSensor に渡す。
+  TiltSensorHandle? start(Duration interval) {
+    startCount++;
+    this.interval = interval;
+    return (read: () => next, stop: () => stopCount++);
+  }
+}
+
+/// ヒンジ監視の偽物。start で受け取った onUpdate からテストが更新を流す。
+class FakeHingeObserver({final bool available = true}) {
+  void Function(HingeUpdate?)? onUpdate;
+  int startCount = 0;
+  int stopCount = 0;
+
+  /// HingeAngleProvider の startObserver に渡す。
+  VoidCallback? start(void Function(HingeUpdate?) onUpdate) {
+    startCount++;
+    if (!available) return null;
+    this.onUpdate = onUpdate;
+    return () => stopCount++;
+  }
+}
+
+/// 開始・停止の回数を数え、指定すれば失敗する入力源。
+class CountingAngleProvider({
+  @override final String id = 'fake',
+  final Exception? startError,
+}) implements AngleProvider {
+  int startCount = 0;
+  int stopCount = 0;
+  @override
+  double? latestAngle;
+  @override
+  Stream<double> get angleStream => const Stream.empty();
+  @override
+  String get label => 'fake';
+  @override
+  final ValueNotifier<bool> onOuterDisplay = ValueNotifier(false);
+  @override
+  Future<void> start() async {
+    startCount++;
+    if (startError case final e?) throw e;
+  }
+
+  @override
+  Future<void> stop() async => stopCount++;
 }

@@ -7,10 +7,23 @@ import 'package:flutter/foundation.dart';
 import 'angle_provider.dart';
 import 'diagnostics_log.dart';
 
+/// ヒンジの監視を始める関数。返り値は監視を止める関数（始められなければ null）。
+/// テストでは偽物に差し替える（本物の [DuoHingeObserver] は iOS の FFI でしか動かないため）。
+typedef HingeObserverStarter = VoidCallback? Function(
+  void Function(HingeUpdate?) onUpdate,
+);
+
+/// 本物のヒンジ監視（UIHingeInteraction）を始める。
+VoidCallback? startDuoHingeObserver(void Function(HingeUpdate?) onUpdate) =>
+    DuoHingeObserver.start(onUpdate)?.stop;
+
 /// iPhone Duo のヒンジ角度（UIKit の UIHingeInteraction を FFIgen で直接読む）。
-class HingeAngleProvider() implements AngleProvider {
+class HingeAngleProvider({
+  /// ヒンジの監視の始め方（テスト用に差し替えられる）。
+  final HingeObserverStarter _startObserver = startDuoHingeObserver,
+}) implements AngleProvider {
   final _controller = StreamController<double>.broadcast();
-  DuoHingeObserver? _observer;
+  VoidCallback? _stopObserver;
   double? _latest;
   final _first = Completer<bool>();
 
@@ -31,9 +44,9 @@ class HingeAngleProvider() implements AngleProvider {
 
   @override
   Future<void> start() async {
-    if (_observer != null) return;
-    _observer = DuoHingeObserver.start(onUpdate);
-    if (_observer == null) _complete(false);
+    if (_stopObserver != null) return;
+    _stopObserver = _startObserver(onUpdate);
+    if (_stopObserver == null) _complete(false);
   }
 
   /// ヒンジの更新を 1 回分取り込む。null = この端末・階層ではヒンジが取れない。
@@ -72,7 +85,7 @@ class HingeAngleProvider() implements AngleProvider {
 
   @override
   Future<void> stop() async {
-    _observer?.stop();
-    _observer = null;
+    _stopObserver?.call();
+    _stopObserver = null;
   }
 }
