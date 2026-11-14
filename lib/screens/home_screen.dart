@@ -134,7 +134,12 @@ class _HomeScreenState() extends State<HomeScreen> with RouteAware {
                               ),
                             ),
                             const SizedBox(width: 12),
-                            AngleText(provider.latestAngle!, fontSize: 32),
+                            // 0°〜180° のどれでも幅を同じにする（桁が変わっても絵がずれない）。
+                            AngleText(
+                              provider.latestAngle!,
+                              fontSize: 32,
+                              reserveWidthFor: '180°',
+                            ),
                           ],
                         )
                       : const Text('角度: --'),
