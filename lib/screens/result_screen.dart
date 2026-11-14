@@ -11,34 +11,23 @@ import '../widgets/angle_reveal.dart';
 import '../widgets/deviation_chart.dart';
 import 'game_screen.dart';
 
-class ResultScreen extends StatefulWidget {
-  const ResultScreen({
-    super.key,
-    required this.results,
-    required this.totalScore,
-    required this.rank,
-    required this.angleProvider,
-    this.bestScoreStore,
-    this.bestScore,
-    this.isNewBest = false,
-  });
-
-  final List<RoundResult> results;
-  final int totalScore;
-  final Rank rank;
-  final AngleProvider angleProvider;
-
-  final BestScoreStore? bestScoreStore;
+class const ResultScreen({
+  super.key,
+  required final List<RoundResult> results,
+  required final int totalScore,
+  required final Rank rank,
+  required final AngleProvider angleProvider,
+  final BestScoreStore? bestScoreStore,
 
   /// 保存済みの最高点（今回分を反映後）。保存に失敗したときは null。
-  final int? bestScore;
-  final bool isNewBest;
-
+  final int? bestScore,
+  final bool isNewBest = false,
+}) extends StatefulWidget {
   @override
   State<ResultScreen> createState() => _ResultScreenState();
 }
 
-class _ResultScreenState extends State<ResultScreen> {
+class _ResultScreenState() extends State<ResultScreen> {
   Timer? _bestTimer;
 
   @override
@@ -50,8 +39,7 @@ class _ResultScreenState extends State<ResultScreen> {
   @override
   void initState() {
     super.initState();
-    final fb = context.feedback;
-    fb.play(Sfx.rank);
+    final fb = context.feedback..play(Sfx.rank);
     if (widget.isNewBest) {
       _bestTimer = Timer(
         const Duration(milliseconds: 700),
@@ -140,10 +128,7 @@ class _ResultScreenState extends State<ResultScreen> {
                 SizedBox(width: 56, child: Text('${i + 1}問')),
                 Expanded(
                   child: Text(
-                    results[i].measured
-                        ? '${results[i].target.round()}°→${results[i].actual!.round()}°'
-                              '  ${AngleZoom.signedLabel(results[i].target, results[i].actual!)}'
-                        : '${results[i].target.round()}°→計測なし',
+                    _resultLine(results[i]),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -182,4 +167,12 @@ class _ResultScreenState extends State<ResultScreen> {
       ),
     );
   }
+}
+
+/// 「45°→41°  -4.0°」。計測できなかったときは「45°→計測なし」。
+String _resultLine(RoundResult r) {
+  final target = '${r.target.round()}°';
+  if (!r.measured) return '$target→計測なし';
+  final signed = AngleZoom.signedLabel(r.target, r.actual!);
+  return '$target→${r.actual!.round()}°  $signed';
 }

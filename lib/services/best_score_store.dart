@@ -4,14 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// キーは「入力源 × 問題数」ごと。ヒンジと傾きは難しさが違い、
 /// 問題数が違えば満点も違うため、別々に記録する。
-class BestScoreStore {
-  BestScoreStore({SharedPreferencesAsync? prefs})
-    : _prefs = prefs ?? SharedPreferencesAsync();
+class BestScoreStore({SharedPreferencesAsync? prefs}) {
+  final SharedPreferencesAsync _prefs = prefs ?? SharedPreferencesAsync();
 
-  final SharedPreferencesAsync _prefs;
-
+  /// v2: お題を 10〜80°（平ら=0°）に変えた（2026-11-06）。
   static String keyFor({required String providerId, required int rounds}) =>
-      'best_score_v2_${providerId}_r$rounds'; // v2: お題を 10〜80°（平ら=0°）に変えた 2026-11-06
+      'best_score_v2_${providerId}_r$rounds';
 
   /// 記録がなければ null。
   Future<int?> load({required String providerId, required int rounds}) =>

@@ -7,15 +7,14 @@ import 'angle_provider.dart';
 import 'diagnostics_log.dart';
 
 /// iPhone Duo のヒンジ角度（Swift 側 HingeAnglePlugin / UIHingeInteraction）。
-class HingeAngleProvider implements AngleProvider {
-  HingeAngleProvider({MethodChannel? channel})
-    : _channel = channel ?? const MethodChannel(channelName) {
+class HingeAngleProvider({MethodChannel? channel}) implements AngleProvider {
+  this {
     _channel.setMethodCallHandler(_onCall);
   }
 
   static const channelName = 'com.example.hinge_angle_game/hinge';
 
-  final MethodChannel _channel;
+  final MethodChannel _channel = channel ?? const MethodChannel(channelName);
   final _controller = StreamController<double>.broadcast();
   final _availability = StreamController<bool>.broadcast();
 

@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screens/home_screen.dart';
@@ -29,20 +29,15 @@ Future<void> main() async {
   await settings.load();
   final feedback = GameFeedback(settings: settings);
   // 効果音の読み込みは待たない（終わる前に鳴らそうとした音は鳴らないだけ）。
-  feedback.init();
+  unawaited(feedback.init());
   runApp(PitattoAngleApp(settings: settings, feedback: feedback));
 }
 
-class PitattoAngleApp extends StatelessWidget {
-  const PitattoAngleApp({
-    super.key,
-    required this.settings,
-    required this.feedback,
-  });
-
-  final AppSettings settings;
-  final GameFeedback feedback;
-
+class const PitattoAngleApp({
+  super.key,
+  required final AppSettings settings,
+  required final GameFeedback feedback,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppServices(settings: settings, feedback: feedback, child: _app());
@@ -61,14 +56,12 @@ class PitattoAngleApp extends StatelessWidget {
 }
 
 /// 入力源（ヒンジ or 傾き）を決めてからホームへ。
-class _Bootstrap extends StatefulWidget {
-  const _Bootstrap();
-
+class const _Bootstrap() extends StatefulWidget {
   @override
   State<_Bootstrap> createState() => _BootstrapState();
 }
 
-class _BootstrapState extends State<_Bootstrap> with WidgetsBindingObserver {
+class _BootstrapState() extends State<_Bootstrap> with WidgetsBindingObserver {
   late final Future<AngleProvider> _provider = resolveAngleProvider();
   late final AppLifecycleListener _lifecycle;
   bool _stoppedInBackground = false;
@@ -116,11 +109,13 @@ class _BootstrapState extends State<_Bootstrap> with WidgetsBindingObserver {
 
   /// 内側の画面で横長になる向きの組。最初は landscape を試し、縦長になったら portrait に切り替えて覚える
   /// （Duo の内側の画面でどちらが横長かを決め打ちしないため）。
-  static const _landscape = [
+  static const List<DeviceOrientation> _landscape = [
     DeviceOrientation.landscapeLeft,
     DeviceOrientation.landscapeRight,
   ];
-  static const _portrait = [DeviceOrientation.portraitUp];
+  static const List<DeviceOrientation> _portrait = [
+    DeviceOrientation.portraitUp,
+  ];
   List<DeviceOrientation> _innerSet = _landscape;
   List<DeviceOrientation>? _applied;
 
@@ -160,8 +155,9 @@ class _BootstrapState extends State<_Bootstrap> with WidgetsBindingObserver {
     if (!mounted ||
         p == null ||
         p.onOuterDisplay.value ||
-        !identical(_applied, _innerSet))
+        !identical(_applied, _innerSet)) {
       return;
+    }
     final views = WidgetsBinding.instance.platformDispatcher.views;
     if (views.isEmpty) return;
     final v = views.first;

@@ -5,7 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../services/angle_provider.dart';
 import 'scoring.dart';
 
-enum GamePhase {
+enum GamePhase() {
   /// 目標角度を表示（3秒カウントダウン）
   showTarget,
 
@@ -20,26 +20,19 @@ enum GamePhase {
 }
 
 /// 1セット（10問）の進行。角度は [AngleProvider] から読むだけで、入力源を問わない。
-class GameSession extends ChangeNotifier {
-  static const defaultRounds = 5; // 10問は長かった（実機の感想 2026-11-06）
-
-  GameSession({
-    required this.angleProvider,
-    this.rounds = defaultRounds,
-    this.showTargetSeconds = 3,
-    this.blindSeconds = 5,
-    List<int>? targets,
-    this.onLock,
-  }) : targets = targets ?? generateTargets(count: rounds);
-
-  final AngleProvider angleProvider;
-  final int rounds;
-  final int showTargetSeconds;
-  final int blindSeconds;
-  final List<int> targets;
+class GameSession({
+  required final AngleProvider angleProvider,
+  final int rounds = defaultRounds,
+  final int showTargetSeconds = 3,
+  final int blindSeconds = 5,
+  List<int>? targets,
 
   /// ロックした瞬間に呼ぶ（ハプティクス用）。
-  final VoidCallback? onLock;
+  final VoidCallback? onLock,
+}) extends ChangeNotifier {
+  static const defaultRounds = 5;
+
+  final List<int> targets = targets ?? generateTargets(count: rounds);
 
   final List<RoundResult> results = [];
   GamePhase _phase = GamePhase.showTarget;

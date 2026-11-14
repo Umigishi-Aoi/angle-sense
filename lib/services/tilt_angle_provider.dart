@@ -10,15 +10,17 @@ import 'angle_provider.dart';
 ///
 /// 0°=画面を上にして平置き、90°=立てた、180°=画面を下にして平置き。
 /// sensors_plus の加速度は平置き（画面上）で z ≈ +9.8。
-class TiltAngleProvider implements AngleProvider {
-  TiltAngleProvider({this.smoothing = 0.2});
-
+class TiltAngleProvider({
   /// ローパスフィルタ係数（0〜1、大きいほど追従が速い）。
-  final double smoothing;
-
+  final double smoothing = 0.2,
+}) implements AngleProvider {
   final _controller = StreamController<double>.broadcast();
+  // stop() で cancel している（解析ツールは別メソッドでの cancel を追えない）。
+  // ignore: cancel_subscriptions
   StreamSubscription<AccelerometerEvent>? _sub;
-  double? _gx, _gy, _gz;
+  double? _gx;
+  double? _gy;
+  double? _gz;
   double? _latest;
 
   @override

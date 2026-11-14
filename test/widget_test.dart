@@ -1,16 +1,12 @@
 import 'dart:async';
 
 import 'package:cupertino_ui/cupertino_ui.dart' show CupertinoPageTransition;
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hinge_angle_game/game/game_session.dart';
 import 'package:hinge_angle_game/game/scoring.dart';
 import 'package:hinge_angle_game/main.dart' show routeObserver;
 import 'package:hinge_angle_game/screens/battle_screen.dart';
-import 'package:hinge_angle_game/widgets/angle_reveal.dart';
-import 'package:hinge_angle_game/widgets/deviation_chart.dart';
-import 'package:hinge_angle_game/widgets/judgement_burst.dart';
 import 'package:hinge_angle_game/screens/game_screen.dart';
 import 'package:hinge_angle_game/screens/home_screen.dart';
 import 'package:hinge_angle_game/screens/result_screen.dart';
@@ -22,13 +18,17 @@ import 'package:hinge_angle_game/services/feedback.dart';
 import 'package:hinge_angle_game/services/hinge_angle_provider.dart';
 import 'package:hinge_angle_game/services/tilt_angle_provider.dart';
 import 'package:hinge_angle_game/ui/retro_theme.dart';
+import 'package:hinge_angle_game/widgets/angle_reveal.dart';
+import 'package:hinge_angle_game/widgets/deviation_chart.dart';
+import 'package:hinge_angle_game/widgets/judgement_burst.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 /// 鳴らした音と振動を記録するだけの GameFeedback。
-class RecordingFeedback extends GameFeedback {
-  RecordingFeedback(super.settings) : super.silent();
+class RecordingFeedback(super.settings) extends GameFeedback {
+  this : super.silent();
   final events = <String>[];
   @override
   void play(Sfx sfx) => events.add(sfx.name);
@@ -36,12 +36,11 @@ class RecordingFeedback extends GameFeedback {
   void haptic(HapticPattern pattern) => events.add('haptic:${pattern.name}');
 }
 
-class FakeAngleProvider implements AngleProvider {
+class FakeAngleProvider() implements AngleProvider {
   @override
   double? latestAngle;
-  final _c = StreamController<double>.broadcast();
   @override
-  Stream<double> get angleStream => _c.stream;
+  Stream<double> get angleStream => const Stream.empty();
   @override
   String get id => 'fake';
   @override
@@ -152,8 +151,9 @@ void main() {
       )..start();
       await tester.pump(const Duration(seconds: 8));
       expect(session.phase, GamePhase.reveal);
-      session.pause();
-      session.next(); // 一時停止中は進まない
+      session
+        ..pause()
+        ..next(); // 一時停止中は進まない
       expect(session.roundIndex, 0);
       session.resume();
       expect(session.phase, GamePhase.reveal);
@@ -406,22 +406,18 @@ void main() {
     ) async {
       await pumpGame(tester, FakeAngleProvider()..latestAngle = 90);
       await tester.pump(const Duration(seconds: 4)); // 暗転中
-      for (final s in [
+      [
         AppLifecycleState.inactive,
         AppLifecycleState.hidden,
         AppLifecycleState.paused,
-      ]) {
-        tester.binding.handleAppLifecycleStateChanged(s);
-      }
+      ].forEach(tester.binding.handleAppLifecycleStateChanged);
       await tester.pump(const Duration(seconds: 10)); // バックグラウンド中に時間が過ぎる
       // 復帰（paused 中はフレームが描かれないので、表示の確認は復帰後に行う）
-      for (final s in [
+      [
         AppLifecycleState.hidden,
         AppLifecycleState.inactive,
         AppLifecycleState.resumed,
-      ]) {
-        tester.binding.handleAppLifecycleStateChanged(s);
-      }
+      ].forEach(tester.binding.handleAppLifecycleStateChanged);
       await tester.pump();
       expect(find.text('一時停止中'), findsOneWidget);
       await tester.pump(const Duration(seconds: 10));

@@ -18,7 +18,7 @@ Future<AngleProvider> resolveAngleProvider() async {
       await hinge.start();
       if (await hinge.waitForAvailability()) return hinge;
       await hinge.stop();
-    } catch (e) {
+    } on Exception catch (e) {
       // 想定外のエラー（PlatformException 等）で起動が止まらないよう傾きに切り替える。
       debugPrint('hinge unavailable: $e');
     }

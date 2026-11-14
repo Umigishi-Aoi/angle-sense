@@ -4,25 +4,19 @@ import 'package:material_ui/material_ui.dart';
 
 /// 答え合わせ: 折りたたみを横から見た図。左半分（固定の面）を水平に置き、右半分を
 /// 0°（平ら）から実際の角度まで持ち上げて、目標線と重ねる。[actual] が null（計測なし）なら目標線だけ描く。
-class AngleReveal extends StatefulWidget {
-  const AngleReveal({
-    super.key,
-    required this.target,
-    required this.actual,
-    this.duration = const Duration(milliseconds: 1400),
-    this.onCompleted,
-  });
-
-  final double target;
-  final double? actual;
-  final Duration duration;
-  final VoidCallback? onCompleted;
-
+class const AngleReveal({
+  super.key,
+  required final double target,
+  required final double? actual,
+  final Duration duration = const Duration(milliseconds: 1400),
+  final VoidCallback? onCompleted,
+}) extends StatefulWidget {
   @override
   State<AngleReveal> createState() => _AngleRevealState();
 }
 
-class _AngleRevealState extends State<AngleReveal>
+class _AngleRevealState()
+    extends State<AngleReveal>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller =
       AnimationController(vsync: this, duration: widget.duration)
@@ -69,12 +63,11 @@ class _AngleRevealState extends State<AngleReveal>
 
 /// お題の見本: 答え合わせと同じ横から見た図に、お題の線だけを描く（動かない）。
 /// ホームでは今の角度を [color] で描いて、線が動く見本として使う。
-class AnglePreview extends StatelessWidget {
-  const AnglePreview({super.key, required this.target, this.color});
-
-  final double target;
-  final Color? color;
-
+class const AnglePreview({
+  super.key,
+  required final double target,
+  final Color? color,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
@@ -97,12 +90,11 @@ class AnglePreview extends StatelessWidget {
 
 /// 答え合わせの拡大図: 2 本の線の先端あたりを大きく描く。
 /// 誤差が小さいと元の図では線が重なって、どちらが上か分からないため。
-class AngleZoom extends StatelessWidget {
-  const AngleZoom({super.key, required this.target, required this.actual});
-
-  final double target;
-  final double actual;
-
+class const AngleZoom({
+  super.key,
+  required final double target,
+  required final double actual,
+}) extends StatelessWidget {
   /// 符号つきのズレ（+ = 大きい、− = 小さい）。例: +4.0°
   static String signedLabel(double target, double actual) {
     final d = actual - target;
@@ -146,21 +138,13 @@ class AngleZoom extends StatelessWidget {
 }
 
 /// 半径 100 マスの円の、2 本の線の先端付近（30×20 マス）だけを切り出して描く。
-class _ZoomPainter extends CustomPainter {
-  _ZoomPainter({
-    required this.target,
-    required this.actual,
-    required this.targetColor,
-    required this.actualColor,
-    required this.gridColor,
-  });
-
-  final double target;
-  final double actual;
-  final Color targetColor;
-  final Color actualColor;
-  final Color gridColor;
-
+class _ZoomPainter({
+  required final double target,
+  required final double actual,
+  required final Color targetColor,
+  required final Color actualColor,
+  required final Color gridColor,
+}) extends CustomPainter {
   static const cols = 30;
   static const rows = 20;
   static const radius = 100.0;
@@ -250,25 +234,15 @@ class _ZoomPainter extends CustomPainter {
 
 /// ドット絵風に描く: 56×32 マスの格子に塗りつぶした四角を並べる（アンチエイリアスなし）。
 /// 0°=右に水平（平ら）→ 90°=真上（直角）。
-class _ArcPainter extends CustomPainter {
-  _ArcPainter({
-    required this.target,
-    required this.actual,
-    required this.showDiff,
-    required this.finalActual,
-    required this.targetColor,
-    required this.actualColor,
-    required this.gridColor,
-  });
-
-  final double target;
-  final double? actual;
-  final bool showDiff;
-  final double? finalActual;
-  final Color targetColor;
-  final Color actualColor;
-  final Color gridColor;
-
+class _ArcPainter({
+  required final double target,
+  required final double? actual,
+  required final bool showDiff,
+  required final double? finalActual,
+  required final Color targetColor,
+  required final Color actualColor,
+  required final Color gridColor,
+}) extends CustomPainter {
   static const cols = 56;
   static const rows = 32;
   static const radius = 30.0; // マス単位
@@ -294,8 +268,9 @@ class _ArcPainter extends CustomPainter {
       for (var x = 0; x < cols; x++) {
         final c = Offset(x + 0.5, y + 0.5) - pivot;
         final dist = c.distance;
-        if (c.dx >= -0.5 && (dist - radius).abs() < 0.55)
+        if (c.dx >= -0.5 && (dist - radius).abs() < 0.55) {
           cells[(x, y)] = gridColor;
+        }
         // 誤差の範囲（扇形）
         if (showDiff && finalActual != null && dist < radius * 0.6) {
           final deg = math.atan2(-c.dy, c.dx) * 180 / math.pi;
@@ -304,8 +279,9 @@ class _ArcPainter extends CustomPainter {
               .toDouble(); // 線と同じ所で止める
           final lo = math.min(target, shown);
           final hi = math.max(target, shown);
-          if (deg >= lo && deg <= hi)
+          if (deg >= lo && deg <= hi) {
             cells[(x, y)] = actualColor.withValues(alpha: 0.35);
+          }
         }
       }
     }

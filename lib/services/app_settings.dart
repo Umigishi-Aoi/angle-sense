@@ -5,12 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 /// 振動は iPhone 側の「触覚」設定によってはサイレント中に鳴らないため、
 /// 音と振動はそれぞれ独立にオン/オフできるようにしている。
-class AppSettings extends ChangeNotifier {
-  AppSettings({SharedPreferencesAsync? prefs})
-    : _prefs = prefs; // ignore: prefer_initializing_formals
-
-  final SharedPreferencesAsync? _prefs;
-
+class AppSettings({final SharedPreferencesAsync? _prefs})
+    extends ChangeNotifier {
   static const _kSound = 'settings_sound';
   static const _kHaptics = 'settings_haptics';
   static const _kBlindTick = 'settings_blind_tick';
@@ -33,7 +29,7 @@ class AppSettings extends ChangeNotifier {
       _haptics = await p.getBool(_kHaptics) ?? true;
       _blindTick = await p.getBool(_kBlindTick) ?? true;
       notifyListeners();
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('settings load failed: $e');
     }
   }

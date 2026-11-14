@@ -4,9 +4,7 @@ import 'package:flutter/foundation.dart';
 ///
 /// 記録するもの: ヒンジの生の値（ラジアン・状態）、アプリの状態（AppLifecycleState）、画面サイズの変化。
 /// 設定 →「診断（実機確認用）」で表示・コピーできる。
-class DiagnosticsLog extends ChangeNotifier {
-  DiagnosticsLog._();
-
+class DiagnosticsLog._() extends ChangeNotifier {
   static final instance = DiagnosticsLog._();
 
   /// 古いものから消す上限。
@@ -22,8 +20,9 @@ class DiagnosticsLog extends ChangeNotifier {
 
   void add(String kind, String message) {
     _entries.add(DiagnosticsEntry(DateTime.now(), kind, message));
-    if (_entries.length > maxEntries)
+    if (_entries.length > maxEntries) {
       _entries.removeRange(0, _entries.length - maxEntries);
+    }
     notifyListeners();
   }
 
@@ -36,12 +35,15 @@ class DiagnosticsLog extends ChangeNotifier {
     );
     final rad = args['angleRad'];
     final deg = args['angleDeg'];
+    final lock = args.containsKey('orientationLocked')
+        ? ' lock=${args['orientationLocked']}'
+        : '';
     add(
       'hinge',
       'status=${args['status']} available=${args['available']} '
           'rad=${rad is num ? rad.toStringAsFixed(4) : rad} '
           'deg=${deg is num ? deg.toStringAsFixed(1) : deg}'
-          '${args.containsKey('orientationLocked') ? ' lock=${args['orientationLocked']}' : ''}',
+          '$lock',
     );
   }
 
@@ -64,13 +66,11 @@ class DiagnosticsLog extends ChangeNotifier {
 }
 
 @immutable
-class DiagnosticsEntry {
-  const DiagnosticsEntry(this.time, this.kind, this.message);
-
-  final DateTime time;
-  final String kind;
-  final String message;
-
+class const DiagnosticsEntry(
+  final DateTime time,
+  final String kind,
+  final String message,
+) {
   String get timeLabel {
     String two(int v) => v.toString().padLeft(2, '0');
     return '${two(time.hour)}:${two(time.minute)}:${two(time.second)}.'

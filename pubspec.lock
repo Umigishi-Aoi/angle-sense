@@ -167,7 +167,7 @@ packages:
     source: sdk
     version: "0.0.0"
   flutter_lints:
-    dependency: "direct dev"
+    dependency: transitive
     description:
       name: flutter_lints
       sha256: "3105dc8492f6183fb076ccf1f351ac3d60564bff92e20bfc4af9cc1651f4e7e1"
@@ -397,6 +397,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.0"
+  pedantic_mono:
+    dependency: "direct dev"
+    description:
+      name: pedantic_mono
+      sha256: b99ee1cceba6489b5c9e3d6aae046f13fc069b746e815e15bf404236a412f25b
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.39.0"
   platform:
     dependency: transitive
     description:
@@ -619,5 +627,5 @@ packages:
     source: hosted
     version: "3.1.4"
 sdks:
-  dart: ">=3.13.7 <4.0.0"
+  dart: ">=3.14.0 <4.0.0"
   flutter: ">=3.47.0"

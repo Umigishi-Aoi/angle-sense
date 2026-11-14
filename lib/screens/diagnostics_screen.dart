@@ -1,16 +1,15 @@
-import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../services/angle_provider.dart';
 import '../services/diagnostics_log.dart';
 import '../ui/retro_theme.dart';
 
 /// 実機確認用の画面。全開で 180° になるか・開閉でアプリの状態がどう変わるかなどを見る。
-class DiagnosticsScreen extends StatelessWidget {
-  const DiagnosticsScreen({super.key, required this.angleProvider});
-
-  final AngleProvider angleProvider;
-
+class const DiagnosticsScreen({
+  super.key,
+  required final AngleProvider angleProvider,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final log = DiagnosticsLog.instance;
@@ -25,6 +24,9 @@ class DiagnosticsScreen extends StatelessWidget {
           listenable: log,
           builder: (context, _) {
             final h = log.lastHinge;
+            final angle = angleProvider.latestAngle?.toStringAsFixed(1) ?? '--';
+            final w = size.width.toStringAsFixed(0);
+            final hgt = size.height.toStringAsFixed(0);
             final entries = log.entries.reversed.toList();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -39,21 +41,20 @@ class DiagnosticsScreen extends StatelessWidget {
                         Text('入力: ${angleProvider.label}'),
                         const Text('ゲームに使う角度（平ら=0° / 直角=90°）'),
                         Text(
-                          '${angleProvider.latestAngle?.toStringAsFixed(1) ?? '--'}°',
+                          '$angle°',
                           style: const TextStyle(
                             fontSize: 48,
                             color: Retro.yellow,
                           ),
                         ),
                         if (h != null) ...[
-                          Text(
-                            'status: ${h['status']}  available: ${h['available']}',
-                          ),
+                          Text('status: ${h['status']}'),
+                          Text('available: ${h['available']}'),
                           Text('生の値: ${h['angleRad'] ?? '--'} rad'),
                         ],
                         Text('更新頻度: ${log.hingeUpdatesPerSecond} 回/秒'),
                         Text(
-                          '画面: ${size.width.toStringAsFixed(0)}×${size.height.toStringAsFixed(0)} '
+                          '画面: $w×$hgt '
                           '(×${dpr.toStringAsFixed(1)})',
                         ),
                         const SizedBox(height: 8),

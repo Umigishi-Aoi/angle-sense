@@ -3,7 +3,7 @@ import 'package:material_ui/material_ui.dart';
 import '../game/scoring.dart';
 
 /// レトロ・ドット絵風の配色（独自。既存ゲームの配色は使わない）。
-abstract final class Retro {
+abstract final class Retro() {
   static const bg = Color(0xFF14182E); // 夜空の紺
   static const panel = Color(0xFF232A4D);
   static const line = Color(0xFF4A5285); // 枠・目盛り
@@ -28,9 +28,9 @@ abstract final class Retro {
   };
 
   static ThemeData theme() {
-    const shape = RoundedRectangleBorder(borderRadius: BorderRadius.zero);
+    const shape = RoundedRectangleBorder();
     const pad = EdgeInsets.symmetric(horizontal: 24, vertical: 14);
-    final scheme = const ColorScheme.dark(
+    const scheme = ColorScheme.dark(
       primary: yellow,
       onPrimary: bg,
       secondary: cyan,
@@ -79,7 +79,6 @@ abstract final class Retro {
               // 押せないときは枠も暗くして「押せそう」に見せない。
               shape: WidgetStateProperty.resolveWith(
                 (s) => RoundedRectangleBorder(
-                  borderRadius: BorderRadius.zero,
                   side: BorderSide(
                     color: s.contains(WidgetState.disabled) ? line : text,
                     width: px,
@@ -112,7 +111,6 @@ abstract final class Retro {
       dialogTheme: const DialogThemeData(
         backgroundColor: panel,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.zero,
           side: BorderSide(color: text, width: px),
         ),
       ),
@@ -148,9 +146,7 @@ abstract final class Retro {
 }
 
 /// 画面をフェードで切り替える（ゲーム機の画面切り替えのように、横に流さない）。
-class FadePageTransitionsBuilder extends PageTransitionsBuilder {
-  const FadePageTransitionsBuilder();
-
+class const FadePageTransitionsBuilder() extends PageTransitionsBuilder {
   @override
   Duration get transitionDuration => const Duration(milliseconds: 250);
 

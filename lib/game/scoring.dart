@@ -1,16 +1,11 @@
 import 'dart:math' as math;
 
 /// 1問の判定。
-enum Judgement {
+enum Judgement(final String label, final int points) {
   perfect('PERFECT', 100),
   great('GREAT', 70),
   good('GOOD', 40),
-  miss('MISS', 0);
-
-  const Judgement(this.label, this.points);
-
-  final String label;
-  final int points;
+  miss('MISS', 0),
 }
 
 /// 誤差（度）から判定する。±1°=PERFECT / ±5°=GREAT / ±10°=GOOD / それ以上=MISS。
@@ -22,7 +17,12 @@ Judgement judge(double target, double actual) {
   return Judgement.miss;
 }
 
-enum Rank { s, a, b, c }
+enum Rank() {
+  s,
+  a,
+  b,
+  c,
+}
 
 extension RankLabel on Rank {
   String get label => name.toUpperCase();
@@ -38,14 +38,12 @@ Rank rankFor(int totalScore, {int rounds = 10}) {
 }
 
 /// 1問の結果。
-class RoundResult {
-  const RoundResult({required this.target, required this.actual});
-
-  final double target;
+class const RoundResult({
+  required final double target,
 
   /// ロック時の角度。null = 計測なし（ロック時に角度が取れていなかった）→ MISS。
-  final double? actual;
-
+  required final double? actual,
+}) {
   bool get measured => actual != null;
   double? get error => actual == null ? null : (actual! - target).abs();
   Judgement get judgement =>

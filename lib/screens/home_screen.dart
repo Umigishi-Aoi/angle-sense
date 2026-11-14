@@ -14,21 +14,16 @@ import 'battle_screen.dart';
 import 'diagnostics_screen.dart';
 import 'game_screen.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({
-    super.key,
-    required this.angleProvider,
-    this.bestScoreStore,
-  });
-
-  final AngleProvider angleProvider;
-  final BestScoreStore? bestScoreStore;
-
+class const HomeScreen({
+  super.key,
+  required final AngleProvider angleProvider,
+  final BestScoreStore? bestScoreStore,
+}) extends StatefulWidget {
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware {
+class _HomeScreenState() extends State<HomeScreen> with RouteAware {
   late final BestScoreStore _store = widget.bestScoreStore ?? BestScoreStore();
   late Future<int?> _best = _loadBest();
   bool _starting = false;
@@ -63,7 +58,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
         providerId: widget.angleProvider.id,
         rounds: GameSession.defaultRounds,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('best score load failed: $e');
       return null;
     }

@@ -8,7 +8,7 @@ import '../game/scoring.dart';
 import 'app_settings.dart';
 
 /// 効果音の種類。ファイルは `assets/sfx/<fileName>.wav`（tool/gen_sfx.py で生成）。
-enum Sfx {
+enum Sfx(final String fileName) {
   countdown('countdown'),
   blindStart('blind_start'),
   tick('tick'),
@@ -20,9 +20,6 @@ enum Sfx {
   rank('rank'),
   best('best');
 
-  const Sfx(this.fileName);
-  final String fileName;
-
   static Sfx forJudgement(Judgement j) => switch (j) {
     Judgement.perfect => Sfx.perfect,
     Judgement.great => Sfx.great,
@@ -33,14 +30,17 @@ enum Sfx {
 
 /// 振動のパターン。呼び出し側は「何を鳴らすか」だけを渡す。
 /// 判定ごとに分けていたが実機で区別がつかず、判定は音で分かるので1種類にした（2026-11-06）。
-enum HapticPattern { lock, result }
+enum HapticPattern() {
+  lock,
+  result,
+}
 
 /// 効果音と振動をまとめて鳴らす。設定（[AppSettings]）でそれぞれ止められる。
 class GameFeedback {
-  GameFeedback({required this.settings, this.enableAudio = true});
+  new({required this.settings, this.enableAudio = true});
 
   /// 音を出さない版（テスト・音声初期化に失敗したとき用）。
-  GameFeedback.silent(this.settings) : enableAudio = false;
+  new silent(this.settings) : enableAudio = false;
 
   final AppSettings settings;
   final bool enableAudio;
@@ -56,12 +56,10 @@ class GameFeedback {
       await AudioPlayer.global.setAudioContext(
         AudioContext(
           iOS: AudioContextIOS(category: AVAudioSessionCategory.ambient),
-          // Android は保留中。着手時は AudioContextAndroid(audioFocus: none, usageType: game) 等で
-          // iOS と同じく「マナーモードで消音・他アプリを止めない」にする（今は既定=音楽を止める）。
         ),
       );
       _ready = true;
-    } catch (e) {
+    } on Exception catch (e) {
       // 音が出ないだけでゲームは続けられるようにする。
       debugPrint('sfx init failed: $e');
       return;
@@ -73,7 +71,7 @@ class GameFeedback {
         await p.setReleaseMode(ReleaseMode.stop);
         await p.setSource(AssetSource('sfx/${s.fileName}.wav'));
         _players[s] = p;
-      } catch (e) {
+      } on Exception catch (e) {
         debugPrint('sfx load failed (${s.fileName}): $e');
         await p.dispose();
       }
@@ -118,17 +116,12 @@ class GameFeedback {
 }
 
 /// 画面ツリー全体に設定と効果音を配る。
-class AppServices extends InheritedWidget {
-  const AppServices({
-    super.key,
-    required this.settings,
-    required this.feedback,
-    required super.child,
-  });
-
-  final AppSettings settings;
-  final GameFeedback feedback;
-
+class const AppServices({
+  super.key,
+  required final AppSettings settings,
+  required final GameFeedback feedback,
+  required super.child,
+}) extends InheritedWidget {
   /// 再描画の依存を作らずに取る（initState からも呼べる）。
   /// 設定の変化で描き直したい画面は [AppSettings] を ListenableBuilder で監視する。
   static AppServices? maybeOf(BuildContext context) =>

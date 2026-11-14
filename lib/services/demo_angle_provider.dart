@@ -13,9 +13,9 @@ import 'angle_provider.dart';
 /// Mac 側から `xcrun simctl get_app_container booted <bundle id> data` の
 /// `tmp/demo_angle.txt` に書き込んで角度を変える。
 /// 画面の出し分け（横向き固定・あそびかたの説明）を本物と同じにするため、id は tilt / hinge にする。
-class DemoAngleProvider implements AngleProvider {
+class DemoAngleProvider() implements AngleProvider {
   static const _mode = String.fromEnvironment('DEMO_ANGLE');
-  static const enabled = _mode == 'tilt' || _mode == 'hinge';
+  static const bool enabled = _mode == 'tilt' || _mode == 'hinge';
 
   final _controller = StreamController<double>.broadcast();
   Timer? _timer;

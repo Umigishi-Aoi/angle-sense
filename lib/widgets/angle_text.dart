@@ -1,13 +1,12 @@
 import 'package:material_ui/material_ui.dart';
 
 /// 大きく角度を表示する。
-class AngleText extends StatelessWidget {
-  const AngleText(this.degrees, {super.key, this.fontSize = 120, this.color});
-
-  final num degrees;
-  final double fontSize;
-  final Color? color;
-
+class const AngleText(
+  final num degrees, {
+  super.key,
+  final double fontSize = 120,
+  final Color? color,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Text(

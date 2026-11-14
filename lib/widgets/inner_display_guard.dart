@@ -7,16 +7,11 @@ import '../ui/retro_theme.dart';
 ///
 /// 画面の切り替えは iOS が開き具合で決め、アプリからは止められない（iOS 27.2 SDK 調査 2026-11-06）。
 /// ゲームは内側の画面だけで遊ぶ設計なので、外側に来たら中身の代わりに案内を出す。
-class InnerDisplayGuard extends StatelessWidget {
-  const InnerDisplayGuard({
-    super.key,
-    required this.angleProvider,
-    required this.child,
-  });
-
-  final AngleProvider angleProvider;
-  final Widget child;
-
+class const InnerDisplayGuard({
+  super.key,
+  required final AngleProvider angleProvider,
+  required final Widget child,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
@@ -32,9 +27,7 @@ class InnerDisplayGuard extends StatelessWidget {
   }
 }
 
-class _OuterNotice extends StatelessWidget {
-  const _OuterNotice();
-
+class const _OuterNotice() extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

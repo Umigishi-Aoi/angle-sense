@@ -7,40 +7,32 @@ import '../services/best_score_store.dart';
 import '../services/feedback.dart';
 import '../ui/retro_theme.dart';
 import '../widgets/angle_reveal.dart';
-import '../widgets/judgement_burst.dart';
 import '../widgets/angle_text.dart';
 import '../widgets/inner_display_guard.dart';
+import '../widgets/judgement_burst.dart';
 import 'result_screen.dart';
 
-class GameScreen extends StatefulWidget {
-  const GameScreen({
-    super.key,
-    required this.angleProvider,
-    this.bestScoreStore,
-    this.rounds = GameSession.defaultRounds,
-    this.title,
-    this.onFinished,
-  });
-
-  final AngleProvider angleProvider;
-
-  /// 問題数（バトルは 1）。
-  final int rounds;
-
-  /// 上部に出す見出し（バトルの「プレイヤー1」など）。null なら「第 N / M 問」。
-  final String? title;
-
-  /// 終わったときに呼ぶ。null なら自己ベストを保存して結果画面へ（1人モード）。
-  final void Function(List<RoundResult> results)? onFinished;
+class const GameScreen({
+  super.key,
+  required final AngleProvider angleProvider,
 
   /// テストで差し替える用。null なら既定の保存先。
-  final BestScoreStore? bestScoreStore;
+  final BestScoreStore? bestScoreStore,
 
+  /// 問題数（バトルは 1）。
+  final int rounds = GameSession.defaultRounds,
+
+  /// 上部に出す見出し（バトルの「プレイヤー1」など）。null なら「第 N / M 問」。
+  final String? title,
+
+  /// 終わったときに呼ぶ。null なら自己ベストを保存して結果画面へ（1人モード）。
+  final void Function(List<RoundResult> results)? onFinished,
+}) extends StatefulWidget {
   @override
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState() extends State<GameScreen> {
   late final GameSession _session;
   late final AppLifecycleListener _lifecycle;
   bool _revealDone = false;
@@ -60,8 +52,9 @@ class _GameScreenState extends State<GameScreen> {
       angleProvider: widget.angleProvider,
       rounds: widget.rounds,
       onLock: () {
-        _fb.play(Sfx.lock);
-        _fb.haptic(HapticPattern.lock);
+        _fb
+          ..play(Sfx.lock)
+          ..haptic(HapticPattern.lock);
       },
     )..addListener(_onSessionChanged);
     // バックグラウンドに回ったら一時停止。inactive では止めない
@@ -136,7 +129,7 @@ class _GameScreenState extends State<GameScreen> {
         providerId: widget.angleProvider.id,
         rounds: _session.rounds,
       );
-    } catch (e) {
+    } on Exception catch (e) {
       // 保存に失敗しても結果は見せる（記録欄だけ出さない）。
       debugPrint('best score save failed: $e');
     }
@@ -504,18 +497,12 @@ class _GameScreenState extends State<GameScreen> {
 const zoomMaxError = 10.0;
 
 /// 残り秒数をドットの四角で出す（1秒=1マス。減っていくのが一目で分かるように）。
-class CountdownBar extends StatelessWidget {
-  const CountdownBar({
-    super.key,
-    required this.remaining,
-    required this.total,
-    required this.color,
-  });
-
-  final int remaining;
-  final int total;
-  final Color color;
-
+class const CountdownBar({
+  super.key,
+  required final int remaining,
+  required final int total,
+  required final Color color,
+}) extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(

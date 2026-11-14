@@ -9,16 +9,11 @@ import '../ui/retro_theme.dart';
 /// - PERFECT: ドットの紙吹雪が飛び散り、文字が大きく弾んで戻る
 /// - GREAT: 小さめの紙吹雪と、軽い弾み
 /// - GOOD / MISS: 演出なし（文字だけ）
-class JudgementBurst extends StatefulWidget {
-  const JudgementBurst({
-    super.key,
-    required this.judgement,
-    required this.child,
-  });
-
-  final Judgement judgement;
-  final Widget child;
-
+class const JudgementBurst({
+  super.key,
+  required final Judgement judgement,
+  required final Widget child,
+}) extends StatefulWidget {
   /// 紙吹雪の粒の数（演出なしは 0）。
   static int particleCount(Judgement j) => switch (j) {
     Judgement.perfect => 28,
@@ -30,7 +25,8 @@ class JudgementBurst extends StatefulWidget {
   State<JudgementBurst> createState() => _JudgementBurstState();
 }
 
-class _JudgementBurstState extends State<JudgementBurst>
+class _JudgementBurstState()
+    extends State<JudgementBurst>
     with SingleTickerProviderStateMixin {
   late final AnimationController _c = AnimationController(
     vsync: this,
@@ -99,27 +95,18 @@ class _JudgementBurstState extends State<JudgementBurst>
   }
 }
 
-class _Particle {
-  const _Particle({
-    required this.angle,
-    required this.speed,
-    required this.size,
-    required this.color,
-  });
+class const _Particle({
+  required final double angle,
+  required final double speed,
+  required final double size,
+  required final Color color,
+});
 
-  final double angle;
-  final double speed;
-  final double size;
-  final Color color;
-}
-
-class _BurstPainter extends CustomPainter {
-  _BurstPainter(this.particles, this.t, {required this.gravity});
-
-  final List<_Particle> particles;
-  final double t;
-  final double gravity;
-
+class _BurstPainter(
+  final List<_Particle> particles,
+  final double t, {
+  required final double gravity,
+}) extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);

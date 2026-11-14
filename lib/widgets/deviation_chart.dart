@@ -8,13 +8,13 @@ import '../ui/retro_theme.dart';
 /// お題は人ごとにちがうので、角度そのものではなく「お題からのズレ」（実際 − お題）を
 /// 1本の物差しに並べる。真ん中がピタッ、右が折りすぎ、左が足りない。
 /// ±[range]° を超えたズレは端に寄せ、矢印で「はみ出し」を示す。
-class DeviationChart extends StatelessWidget {
-  const DeviationChart({super.key, required this.rows, this.range = 30});
+class const DeviationChart({
+  super.key,
 
   /// (表示名, 結果) を上から順に並べる。
-  final List<(String, RoundResult)> rows;
-  final double range;
-
+  required final List<(String, RoundResult)> rows,
+  final double range = 30,
+}) extends StatelessWidget {
   /// 符号つきのズレ。+ = 折りすぎ、− = 足りない。計測なしは null。
   static double? signedError(RoundResult r) =>
       r.actual == null ? null : r.actual! - r.target;
@@ -93,12 +93,12 @@ class DeviationChart extends StatelessWidget {
                 final w = c.maxWidth;
                 final children = <Widget>[
                   // 物差し
-                  Positioned(
+                  const Positioned(
                     left: 0,
                     right: 0,
                     top: _rowHeight / 2 - 1,
                     height: 2,
-                    child: const ColoredBox(color: Retro.line),
+                    child: ColoredBox(color: Retro.line),
                   ),
                   // ピタッの線
                   Positioned(
@@ -119,7 +119,7 @@ class DeviationChart extends StatelessWidget {
                     ),
                   );
                 } else {
-                  final clamped = err.clamp(-range, range).toDouble();
+                  final clamped = err.clamp(-range, range);
                   final over = err.abs() > range;
                   final x = (clamped + range) / (2 * range) * (w - _dot);
                   children.add(

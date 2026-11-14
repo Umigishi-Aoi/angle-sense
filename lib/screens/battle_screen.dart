@@ -9,11 +9,10 @@ import '../widgets/inner_display_guard.dart';
 import 'game_screen.dart';
 
 /// バトルの人数（2〜10人）を決める画面。
-class BattleSetupScreen extends StatefulWidget {
-  const BattleSetupScreen({super.key, required this.angleProvider});
-
-  final AngleProvider angleProvider;
-
+class const BattleSetupScreen({
+  super.key,
+  required final AngleProvider angleProvider,
+}) extends StatefulWidget {
   static const minPlayers = 2;
   static const maxPlayers = 10;
 
@@ -21,7 +20,7 @@ class BattleSetupScreen extends StatefulWidget {
   State<BattleSetupScreen> createState() => _BattleSetupScreenState();
 }
 
-class _BattleSetupScreenState extends State<BattleSetupScreen> {
+class _BattleSetupScreenState() extends State<BattleSetupScreen> {
   int _players = 2;
 
   @override
@@ -91,19 +90,13 @@ class _BattleSetupScreenState extends State<BattleSetupScreen> {
 }
 
 /// 1人の結果。
-class BattleEntry {
-  const BattleEntry({
-    required this.name,
-    required this.result,
-    required this.chartLabel,
-  });
-
-  final String name;
-  final RoundResult result;
+class const BattleEntry({
+  required final String name,
+  required final RoundResult result,
 
   /// ズレ図の行の名前（名前を入れた人はその名前、入れていない人は P1 など）。
-  final String chartLabel;
-
+  required final String chartLabel,
+}) {
   /// 順位づけ用の誤差。計測なしは最下位。
   double get sortError => result.error ?? double.infinity;
 }
@@ -123,16 +116,11 @@ List<(int, BattleEntry)> rankEntries(List<BattleEntry> entries) {
 }
 
 /// 順番に1回ずつ計測し、最後に順位を出す。
-class BattleScreen extends StatefulWidget {
-  const BattleScreen({
-    super.key,
-    required this.angleProvider,
-    required this.playerCount,
-  });
-
-  final AngleProvider angleProvider;
-  final int playerCount;
-
+class const BattleScreen({
+  super.key,
+  required final AngleProvider angleProvider,
+  required final int playerCount,
+}) extends StatefulWidget {
   /// 名前の入力は任意。最大文字数（結果の表・ズレ図・見出しで 1 行に収めるため）。
   static const maxNameLength = 6;
 
@@ -140,7 +128,7 @@ class BattleScreen extends StatefulWidget {
   State<BattleScreen> createState() => _BattleScreenState();
 }
 
-class _BattleScreenState extends State<BattleScreen> {
+class _BattleScreenState() extends State<BattleScreen> {
   final _entries = <BattleEntry>[];
   final _nameController = TextEditingController();
   bool _playing = false;
@@ -281,11 +269,11 @@ class _BattleScreenState extends State<BattleScreen> {
                 maxLength: BattleScreen.maxNameLength,
                 textAlign: TextAlign.center,
                 textInputAction: TextInputAction.done,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   hintText: '名前（入れなくてもOK）',
                   counterText: '',
                   isDense: true,
-                  enabledBorder: const UnderlineInputBorder(
+                  enabledBorder: UnderlineInputBorder(
                     borderSide: BorderSide(color: Retro.line),
                   ),
                 ),
@@ -347,10 +335,7 @@ class _BattleScreenState extends State<BattleScreen> {
                                     style: const TextStyle(fontSize: 18),
                                   ),
                                   Text(
-                                    e.result.measured
-                                        ? '${e.result.target.round()}°→${e.result.actual!.round()}°  '
-                                              '誤差${e.result.error!.toStringAsFixed(1)}°'
-                                        : '${e.result.target.round()}°→計測なし',
+                                    _resultLine(e.result),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                     style: TextStyle(
@@ -420,4 +405,12 @@ class _BattleScreenState extends State<BattleScreen> {
       ],
     );
   }
+}
+
+/// 「45°→41°  誤差4.0°」。計測できなかったときは「45°→計測なし」。
+String _resultLine(RoundResult r) {
+  final target = '${r.target.round()}°';
+  if (!r.measured) return '$target→計測なし';
+  final error = r.error!.toStringAsFixed(1);
+  return '$target→${r.actual!.round()}°  誤差$error°';
 }
